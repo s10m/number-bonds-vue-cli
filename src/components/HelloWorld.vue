@@ -16,17 +16,25 @@ export default {
     onMounted(() => {
       initialise();
     });
-    /**
-     * @returns {HTMLCanvasElement}
-     */
-    function getCanvas() {
-      return document.getElementById("gameCanvas");
-    }
     function initialise() {
-      const theCanvas = getCanvas();
+      /**@type{HTMLCanvasElement} */
+      const theCanvas = document.getElementById("gameCanvas");
       const theContext = theCanvas.getContext("2d");
-      theContext.arc(150, 150, 25, 0, 2 * Math.PI);
-      theContext.fill();
+      const totalCircles = 8;
+      const centreX = 150;
+      const centreY = 150;
+      const circleRadius = 100;
+      for (let circle = 1; circle < totalCircles + 1; circle++) {
+        const circleX =
+          centreX +
+          circleRadius * Math.sin(2 * Math.PI * (circle / totalCircles));
+        const circleY =
+          centreY +
+          circleRadius * Math.cos(2 * Math.PI * (circle / totalCircles));
+        theContext.beginPath();
+        theContext.arc(circleX, circleY, 25, 0, 2 * Math.PI);
+        theContext.fill();
+      }
     }
   },
 };
