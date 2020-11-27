@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Client",
+            "request": "launch",
+            "type": "pwa-chrome",
+            "url": "http://localhost:8080",
+            "webRoot": "${workspaceFolder}",
+            "userDataDir": false,
+            "sourceMapPathOverrides": {
+                "webpack:///*": "${webRoot}/*"
+              }
+            },
+      {
+        "command": "npm run serve",
+        "name": "Server",
+        "request": "launch",
+        "type": "node-terminal"
+    }
+    ],
+    "compounds": [
+        {
+            "name": "Compound",
+            "configurations": ["Client", "Server"]
+        }
+    ]
+  }
