@@ -17,7 +17,7 @@ export default {
     let theCanvas;
     /**@type {CanvasRenderingContext2D} */
     let theContext;
-    /**@type {[{path: Path2D, index: number}]} */
+    /**@type {[{path: Path2D, index: number, isHit: boolean}]} */
     let circles;
     onMounted(() => {
       initialise();
@@ -36,22 +36,27 @@ export default {
         const circleY = centreY + circleRadius * Math.cos(partCircle);
         const thePath = new Path2D();
         thePath.arc(circleX, circleY, 25, 0, fullCircle);
-        circles.push({ path: thePath, index: circle - 1 });
+        circles.push({ path: thePath, index: circle - 1, isHit: false });
       }
-      drawCircles();
+      window.requestAnimationFrame(drawCircles);
     }
     function drawCircles() {
+      theContext.globalCompositeOperation = "destination-over";
+      theContext.clearRect(0, 0, 300, 300); // clear canvas
       circles.forEach((p) => {
+        theContext.fillStyle = p.isHit ? "red" : "blue";
         theContext.fill(p.path);
       });
+      window.requestAnimationFrame(drawCircles);
     }
     /**@param {MouseEvent} e */
     function gameCanvasClick(e) {
-      console.log(`x: ${e.offsetX} y: ${e.offsetY}`);
       const hitCircle = circles.find((c) =>
         theContext.isPointInPath(c.path, e.offsetX, e.offsetY)
       );
-      console.log(hitCircle ? `Hit: ${hitCircle.index}` : "No hit :-(");
+      if (hitCircle) {
+        hitCircle.isHit = !hitCircle.isHit;
+      }
     }
     return { gameCanvasClick };
   },
