@@ -19,54 +19,64 @@ export default {
     let theContext;
     /**
      * @typedef {{calcNumber: number}} TargetData
-     * @type {[{path: Path2D, index: number, isHit: boolean, position: DOMPointReadOnly, data: TargetData}]} */
+     * @typedef {{path: Path2D, index: number, isHit: boolean, position: DOMPointReadOnly, data: TargetData}} PieceData
+     * @type {[PieceData]} */
     let circles;
     const dataNumbers = [25, 37, 25, 256, 42, 56, 97, 60];
     /**
      * @typedef {{hasPlayed: boolean, selectedIndex: number}} Play
      * @type {{first: Play, second: Play}}
      */
-    let currentGame;
+    const currentGame = {
+      first: initialPlay(),
+      second: initialPlay(),
+    };
+    const centre = new DOMPointReadOnly(250, 250);
+    const totalCircles = 8;
+    const circleRadius = 150;
     onMounted(() => {
       initialise();
     });
+    /**
+     * @param {number} circle
+     * @returns {PieceData}
+     */
+    function initACircle(circleNumber) {
+      const partCircle = fullCircle * (circleNumber / totalCircles);
+      const circleX = centre.x + circleRadius * Math.sin(partCircle);
+      const circleY = centre.y + circleRadius * Math.cos(partCircle);
+      const position = new DOMPointReadOnly(circleX, circleY);
+      const path = new Path2D();
+      path.arc(circleX, circleY, 50, 0, fullCircle);
+      return {
+        path,
+        index: circleNumber - 1,
+        isHit: false,
+        data: {
+          calcNumber: dataNumbers[circleNumber - 1],
+        },
+        position,
+      };
+    }
     function initialise() {
       circles = [];
       theCanvas = document.getElementById("gameCanvas");
       theContext = theCanvas.getContext("2d");
-      const totalCircles = 8;
-      const centreX = 250;
-      const centreY = 250;
-      const circleRadius = 150;
       for (let circle = 1; circle < totalCircles + 1; circle++) {
-        const partCircle = fullCircle * (circle / totalCircles);
-        const circleX = centreX + circleRadius * Math.sin(partCircle);
-        const circleY = centreY + circleRadius * Math.cos(partCircle);
-        const position = new DOMPointReadOnly(circleX, circleY);
-        const path = new Path2D();
-        path.arc(circleX, circleY, 50, 0, fullCircle);
-        circles.push({
-          path,
-          index: circle - 1,
-          isHit: false,
-          data: {
-            calcNumber: dataNumbers[circle - 1],
-          },
-          position,
-        });
+        circles.push(initACircle(circle));
       }
-      currentGame = {
-        first: { hasPlayed: false },
-        second: { hasPlayed: false },
-      };
       window.requestAnimationFrame(drawCircles);
     }
     /**
      * @param {CanvasRenderingContext2D} p_Context
      * @param {string} p_ToShow
      * @param {DOMPointReadOnly} p_Position
+     * @param {string} p_Colour
+     * @param {string} p_Font
      */
-    function drawText(p_Context, p_ToShow, p_Position) {
+    function drawText(p_Context, p_ToShow, p_Position, p_Colour, p_Font) {
+      p_Context.fillStyle = p_Colour;
+      p_Context.font = p_Font;
       const textSize = p_Context.measureText(p_ToShow);
       p_Context.fillText(
         p_ToShow,
@@ -84,22 +94,39 @@ export default {
         theContext.fillStyle = p.isHit ? "green" : "red";
         theContext.fill(p.path);
         //  Numbers
-        theContext.fillStyle = "blue";
-        theContext.font = "32px Impact";
-        drawText(theContext, `${p.data.calcNumber}`, p.position);
-        //  Total
+        drawText(
+          theContext,
+          `${p.data.calcNumber}`,
+          p.position,
+          "blue",
+          "32px Impact"
+        );
+        //  Total if we're done
         if (currentGame.first.hasPlayed && currentGame.second.hasPlayed) {
-          theContext.fillStyle = "black";
-          theContext.font = "48px Impact";
           drawText(
             theContext,
             circles[currentGame.first.selectedIndex].data.calcNumber +
               circles[currentGame.second.selectedIndex].data.calcNumber,
-            new DOMPointReadOnly(250, 250)
+            centre,
+            "black",
+            "48px Impact"
           );
         }
       });
       window.requestAnimationFrame(drawCircles);
+    }
+    /**
+     * @returns {Play}
+     */
+    function initialPlay() {
+      return { hasPlayed: false, selectedIndex: -1 };
+    }
+    /**
+     * @param {number} p_Index
+     * @returns {Play}
+     */
+    function doPlay(p_Index) {
+      return { hasPlayed: true, selectedIndex: p_Index };
     }
     /**@param {MouseEvent} e */
     function gameCanvasClick(e) {
@@ -110,15 +137,14 @@ export default {
         if (currentGame.second.hasPlayed) {
           //  Previous game is over. Unset all.
           circles.forEach((c) => (c.isHit = false));
-          currentGame.first = { hasPlayed: false, selectedIndex: -1 };
-          currentGame.second = { hasPlayed: false, selectedIndex: -1 };
+          currentGame.first = initialPlay();
+          currentGame.second = initialPlay();
         }
-        if (!currentGame.first.hasPlayed) {
-          currentGame.first.hasPlayed = true;
-          currentGame.first.selectedIndex = hitCircle.index;
+        const newPlay = doPlay(hitCircle.index);
+        if (currentGame.first.hasPlayed) {
+          currentGame.second = newPlay;
         } else {
-          currentGame.second.hasPlayed = true;
-          currentGame.second.selectedIndex = hitCircle.index;
+          currentGame.first = newPlay;
         }
         hitCircle.isHit = true;
       }
