@@ -1,43 +1,40 @@
 <template>
-  <h1>
-    <canvas id="gameCanvas" height="300" width="300"></canvas>
-  </h1>
+  <canvas
+    id="gameCanvas"
+    height="300"
+    width="300"
+    @click="gameCanvasClick"
+  ></canvas>
 </template>
 
 <script>
 import { onMounted } from "vue";
-
+const fullCircle = 2 * Math.PI;
 export default {
   name: "HelloWorld",
-  props: {
-    msg: String,
-  },
   setup() {
     /**@type{HTMLCanvasElement} */
     let theCanvas;
     let theContext;
-    /**@type{[{path: Path2D}]} */
+    /**@type{{path: Path2D}} */
     let circles;
     onMounted(() => {
       initialise();
     });
     function initialise() {
+      circles = [];
       theCanvas = document.getElementById("gameCanvas");
       theContext = theCanvas.getContext("2d");
-      circles = [];
       const totalCircles = 8;
       const centreX = 150;
       const centreY = 150;
       const circleRadius = 100;
       for (let circle = 1; circle < totalCircles + 1; circle++) {
-        const circleX =
-          centreX +
-          circleRadius * Math.sin(2 * Math.PI * (circle / totalCircles));
-        const circleY =
-          centreY +
-          circleRadius * Math.cos(2 * Math.PI * (circle / totalCircles));
+        const partCircle = fullCircle * (circle / totalCircles);
+        const circleX = centreX + circleRadius * Math.sin(partCircle);
+        const circleY = centreY + circleRadius * Math.cos(partCircle);
         const thePath = new Path2D();
-        thePath.arc(circleX, circleY, 25, 0, 2 * Math.PI);
+        thePath.arc(circleX, circleY, 25, 0, fullCircle);
         circles.push({ path: thePath });
       }
       drawCircles();
@@ -47,6 +44,11 @@ export default {
         theContext.fill(p.path);
       });
     }
+    /**@param {MouseEvent} e */
+    function gameCanvasClick(e) {
+      console.log(`x: ${e.offsetX} y: ${e.offsetY}`);
+    }
+    return { gameCanvasClick };
   },
 };
 </script>
