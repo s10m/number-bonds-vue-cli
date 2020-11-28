@@ -10,6 +10,17 @@
 <script>
 import { onMounted } from "vue";
 const fullCircle = 2 * Math.PI;
+/**
+ * Numbers set up by teacher
+ *  Qs per round
+ *  Operation
+ *  Time to answer
+ * Music
+ * Countdown
+ * Farm themed
+ * Filling up milk
+ * cow kick bucket to help farmer milk cow
+ */
 export default {
   name: "HelloWorld",
   setup() {
