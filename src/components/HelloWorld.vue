@@ -13,13 +13,18 @@ export default {
     msg: String,
   },
   setup() {
+    /**@type{HTMLCanvasElement} */
+    let theCanvas;
+    let theContext;
+    /**@type{[{path: Path2D}]} */
+    let circles;
     onMounted(() => {
       initialise();
     });
     function initialise() {
-      /**@type{HTMLCanvasElement} */
-      const theCanvas = document.getElementById("gameCanvas");
-      const theContext = theCanvas.getContext("2d");
+      theCanvas = document.getElementById("gameCanvas");
+      theContext = theCanvas.getContext("2d");
+      circles = [];
       const totalCircles = 8;
       const centreX = 150;
       const centreY = 150;
@@ -31,10 +36,16 @@ export default {
         const circleY =
           centreY +
           circleRadius * Math.cos(2 * Math.PI * (circle / totalCircles));
-        theContext.beginPath();
-        theContext.arc(circleX, circleY, 25, 0, 2 * Math.PI);
-        theContext.fill();
+        const thePath = new Path2D();
+        thePath.arc(circleX, circleY, 25, 0, 2 * Math.PI);
+        circles.push({ path: thePath });
       }
+      drawCircles();
+    }
+    function drawCircles() {
+      circles.forEach((p) => {
+        theContext.fill(p.path);
+      });
     }
   },
 };
