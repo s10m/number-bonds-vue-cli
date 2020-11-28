@@ -13,10 +13,11 @@ const fullCircle = 2 * Math.PI;
 export default {
   name: "HelloWorld",
   setup() {
-    /**@type{HTMLCanvasElement} */
+    /**@type {HTMLCanvasElement} */
     let theCanvas;
+    /**@type {CanvasRenderingContext2D} */
     let theContext;
-    /**@type{{path: Path2D}} */
+    /**@type {[{path: Path2D, index: number}]} */
     let circles;
     onMounted(() => {
       initialise();
@@ -35,7 +36,7 @@ export default {
         const circleY = centreY + circleRadius * Math.cos(partCircle);
         const thePath = new Path2D();
         thePath.arc(circleX, circleY, 25, 0, fullCircle);
-        circles.push({ path: thePath });
+        circles.push({ path: thePath, index: circle - 1 });
       }
       drawCircles();
     }
@@ -47,6 +48,10 @@ export default {
     /**@param {MouseEvent} e */
     function gameCanvasClick(e) {
       console.log(`x: ${e.offsetX} y: ${e.offsetY}`);
+      const hitCircle = circles.find((c) =>
+        theContext.isPointInPath(c.path, e.offsetX, e.offsetY)
+      );
+      console.log(hitCircle ? `Hit: ${hitCircle.index}` : "No hit :-(");
     }
     return { gameCanvasClick };
   },
