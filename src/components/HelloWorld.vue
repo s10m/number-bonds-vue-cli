@@ -21,6 +21,47 @@ const fullCircle = 2 * Math.PI;
  * Filling up milk
  * cow kick bucket to help farmer milk cow
  */
+/**
+ *  Initialise:
+ *    Generate a list of n numbers
+ *    Start a timer (n seconds)
+ *
+ *  Draw
+ *    if (timer not finished)
+ *      draw current circles (re-evaluate)
+ *    else
+ *      throw up failure (X)
+ *
+ *  On click (assume hit)
+ *    Select-a-number
+ *    if (Game is won)
+ *      Game finished
+ *    reset Play
+ *
+ *  Select-a-number
+ *    if (can select first)
+ *      Select first
+ *    else
+ *      Select second
+ *
+ *  Game is won
+ *    game is equal to the current target
+ *
+ *  End game
+ *    if (remaining targets)
+ *      reset Game (target)
+ *    else
+ *      throw up success
+ *
+ *  Game finished
+ *    disable circles from play
+ *        if (set is completed)
+ *          End game
+ *
+ *  Set is completed
+ *    all circles are disabled
+ */
+
 export default {
   name: "HelloWorld",
   setup() {
