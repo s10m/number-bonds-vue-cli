@@ -21,47 +21,6 @@ const fullCircle = 2 * Math.PI;
  * Filling up milk
  * cow kick bucket to help farmer milk cow
  */
-/**
- *  Initialise:
- *    Generate a list of n numbers
- *    Start a timer (n seconds)
- *
- *  Draw
- *    if (timer not finished)
- *      draw current circles (re-evaluate)
- *    else
- *      throw up failure (X)
- *
- *  On click (assume hit)
- *    Select-a-number
- *    if (Game is won)
- *      Game finished
- *    reset Play
- *
- *  Select-a-number
- *    if (can select first)
- *      Select first
- *    else
- *      Select second
- *
- *  Game is won
- *    game is equal to the current target
- *
- *  End game
- *    if (remaining targets)
- *      reset Game (target)
- *    else
- *      throw up success
- *
- *  Game finished
- *    disable circles from play
- *        if (set is completed)
- *          End game
- *
- *  Set is completed
- *    all circles are disabled
- */
-
 export default {
   name: "HelloWorld",
   setup() {
@@ -71,30 +30,33 @@ export default {
     let theContext;
     /**
      * @typedef {{calcNumber: number}} TargetData
-     * @typedef {{path: Path2D, index: number, isHit: boolean, position: DOMPointReadOnly, data: TargetData}} PieceData
+     * @typedef {{path: Path2D, index: number, isSelected: boolean, isDisplayed: boolean, position: DOMPointReadOnly, data: TargetData}} PieceData
      * @type {[PieceData]} */
     let circles;
-    const dataNumbers = [25, 37, 25, 256, 42, 56, 97, 60];
+    /** @type {[number]} */
+    let dataNumbers;
     /**
      * @typedef {{hasPlayed: boolean, selectedIndex: number}} Play
      * @type {{first: Play, second: Play}}
      */
-    const currentGame = {
+    const currentTurn = {
       first: initialPlay(),
       second: initialPlay(),
     };
     const centre = new DOMPointReadOnly(250, 250);
     const totalCircles = 8;
     const circleRadius = 150;
+    let currentLevel = 0;
     onMounted(() => {
       initialise();
     });
     /**
-     * @param {number} circle
+     * @param {number} circleIndex
+     * @param {number} dataNumber
      * @returns {PieceData}
      */
-    function initACircle(circleNumber) {
-      const partCircle = fullCircle * (circleNumber / totalCircles);
+    function initACircle(circleIndex, dataNumber) {
+      const partCircle = fullCircle * (circleIndex / totalCircles);
       const circleX = centre.x + circleRadius * Math.sin(partCircle);
       const circleY = centre.y + circleRadius * Math.cos(partCircle);
       const position = new DOMPointReadOnly(circleX, circleY);
@@ -102,21 +64,38 @@ export default {
       path.arc(circleX, circleY, 50, 0, fullCircle);
       return {
         path,
-        index: circleNumber - 1,
-        isHit: false,
+        index: circleIndex - 1,
+        isSelected: false,
         data: {
-          calcNumber: dataNumbers[circleNumber - 1],
+          calcNumber: dataNumber,
         },
         position,
+        isDisplayed: true,
       };
+    }
+    function initialiseGame() {
+      dataNumbers = [25, 37, 25, 256, 42, 56, 97, 60];
+      currentLevel = 0;
+      initialiseLevel();
+    }
+    function initialiseLevel() {
+      const targetNumber = dataNumbers[currentLevel];
+      const totalPairs = 4;
+      let currentPair = 0;
+      circles = [];
+      while (currentPair < totalPairs) {
+        const firstNumber = Math.round(Math.random() * targetNumber);
+        const secondNumber = targetNumber - firstNumber;
+        circles.push(initACircle(currentPair * 2 + 1, firstNumber));
+        circles.push(initACircle(currentPair * 2 + 2, secondNumber));
+        currentPair++;
+      }
     }
     function initialise() {
       circles = [];
       theCanvas = document.getElementById("gameCanvas");
       theContext = theCanvas.getContext("2d");
-      for (let circle = 1; circle < totalCircles + 1; circle++) {
-        circles.push(initACircle(circle));
-      }
+      initialiseGame();
       window.requestAnimationFrame(drawCircles);
     }
     /**
@@ -140,31 +119,33 @@ export default {
       );
     }
     function drawCircles() {
-      theContext.clearRect(0, 0, 300, 300); // clear canvas
-      circles.forEach((p) => {
-        //  Circles
-        theContext.fillStyle = p.isHit ? "green" : "red";
-        theContext.fill(p.path);
-        //  Numbers
-        drawText(
-          theContext,
-          `${p.data.calcNumber}`,
-          p.position,
-          "blue",
-          "32px Impact"
-        );
-        //  Total if we're done
-        if (currentGame.first.hasPlayed && currentGame.second.hasPlayed) {
+      theContext.clearRect(0, 0, 500, 500); // clear canvas
+      circles
+        .filter((p) => p.isDisplayed)
+        .forEach((p) => {
+          //  Circles
+          theContext.fillStyle = p.isSelected ? "green" : "red";
+          theContext.fill(p.path);
+          //  Numbers
           drawText(
             theContext,
-            circles[currentGame.first.selectedIndex].data.calcNumber +
-              circles[currentGame.second.selectedIndex].data.calcNumber,
-            centre,
-            "black",
-            "48px Impact"
+            `${p.data.calcNumber}`,
+            p.position,
+            "blue",
+            "32px Impact"
           );
-        }
-      });
+        });
+      if (gameIsWon()) {
+        drawText(theContext, "✓", centre, "green", "48px Impact");
+      } else {
+        drawText(
+          theContext,
+          `${dataNumbers[currentLevel]}`,
+          centre,
+          "black",
+          "48px Impact"
+        );
+      }
       window.requestAnimationFrame(drawCircles);
     }
     /**
@@ -180,46 +161,64 @@ export default {
     function doPlay(p_Index) {
       return { hasPlayed: true, selectedIndex: p_Index };
     }
+    /**
+     * @returns {boolean}
+     */
+    function turnIsWon() {
+      return (
+        dataNumbers[currentLevel] ===
+        circles[currentTurn.first.selectedIndex].data.calcNumber +
+          circles[currentTurn.second.selectedIndex].data.calcNumber
+      );
+    }
+    /**
+     * @returns {boolean}
+     */
+    function gameIsWon() {
+      return currentLevel === dataNumbers.length;
+    }
+    /**
+     * @returns {boolean}
+     */
+    function levelIsWon() {
+      return circles.filter((c) => c.isDisplayed).length === 0;
+    }
     /**@param {MouseEvent} e */
     function gameCanvasClick(e) {
       const hitCircle = circles.find((c) =>
         theContext.isPointInPath(c.path, e.offsetX, e.offsetY)
       );
       if (hitCircle) {
-        if (currentGame.second.hasPlayed) {
-          //  Previous game is over. Unset all.
-          circles.forEach((c) => (c.isHit = false));
-          currentGame.first = initialPlay();
-          currentGame.second = initialPlay();
-        }
         const newPlay = doPlay(hitCircle.index);
-        if (currentGame.first.hasPlayed) {
-          currentGame.second = newPlay;
+        if (
+          currentTurn.first.hasPlayed ||
+          currentTurn.first.selectedIndex === hitCircle.index
+        ) {
+          currentTurn.second = newPlay;
+          if (turnIsWon()) {
+            //  Right. Get rid of the circles.
+            circles[currentTurn.first.selectedIndex].isDisplayed = false;
+            circles[currentTurn.second.selectedIndex].isDisplayed = false;
+            currentTurn.first.hasPlayed = false;
+            if (levelIsWon()) {
+              currentLevel++;
+              if (gameIsWon()) {
+                //?
+              } else {
+                initialiseLevel();
+              }
+            }
+          } else {
+            //  Wrong. Unselect
+            circles[currentTurn.first.selectedIndex].isSelected = false;
+          }
         } else {
-          currentGame.first = newPlay;
+          hitCircle.isSelected = true;
+          currentTurn.first = newPlay;
         }
-        hitCircle.isHit = true;
       }
     }
     return { gameCanvasClick };
   },
 };
 </script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
-</style>
