@@ -61,10 +61,11 @@ export default {
     }
     function drawCircles() {
       theContext.clearRect(0, 0, 500, 500); // clear canvas
-      gameState.getCirclesToDraw().forEach((p) => {
+      gameState.getCirclesToDraw().forEach((p, index) => {
         //  Circles
-        theContext.fillStyle = p.isSelected ? "green" : "red";
-        theContext.fill(p.path);
+        theContext.fillStyle = gameState.isPieceSelected(p) ? "green" : "red";
+        const pieceCentre = gameState.getPieceCentre(index);
+        theContext.fill(gameState.getPiecePath(pieceCentre));
         //  Numbers
         drawText(
           theContext,
