@@ -161,13 +161,20 @@ export function initialiseGameState(centre) {
     }
   }
 
+  const SECONDS_PER_SPIN = 10;
   /**
-   * @param {PieceData} p_Piece
    * @param {number} p_Index
+   * @param {Date} p_Now
+   * @param {number} p_MilliSecondsPerFrame
    * @returns {DOMPointReadOnly}
    */
-  function getPieceCentre(p_Index) {
-    const partCircle = fullCircle * ((p_Index + 1) / circles.length);
+  function getPieceCentre(p_Index, p_MilliSecondsPerFrame, p_Now) {
+    const partCircle =
+      fullCircle *
+      //  Simple "How far along is based on it's index"
+      ((p_Index + 1) / circles.length +
+        //  Extra bit based on the current time (spinning at the rate of SECONDS_PER_SPIN)
+        p_Now / (SECONDS_PER_SPIN * 1_000));
     const circleX = centre.x + circleRadius * Math.sin(partCircle);
     const circleY = centre.y + circleRadius * Math.cos(partCircle);
     return new DOMPointReadOnly(circleX, circleY);

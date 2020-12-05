@@ -37,6 +37,7 @@ export default {
       theCanvas = document.getElementById("gameCanvas");
       theContext = theCanvas.getContext("2d");
       gameState.initialiseGame();
+      lastFrameStart = new Date();
       window.requestAnimationFrame(drawCircles);
     }
     /**
@@ -59,34 +60,55 @@ export default {
             2
       );
     }
+    /**@type {Date} */
+    let lastFrameStart;
+    function getAndUpdateFrameTime() {
+      const newFrameStart = new Date();
+      const lastFrameTime = newFrameStart - lastFrameStart;
+      lastFrameStart = newFrameStart;
+      return lastFrameTime;
+    }
+
     function drawCircles() {
-      theContext.clearRect(0, 0, 500, 500); // clear canvas
-      gameState.getCirclesToDraw().forEach((p, index) => {
-        if (p.isDisplayed) {
-          //  Circles
-          theContext.fillStyle = gameState.isPieceSelected(p) ? "green" : "red";
-          const pieceCentre = gameState.getPieceCentre(index);
-          theContext.fill(gameState.updatePiecePath(p, pieceCentre));
-          //  Numbers
+      try {
+        const lastFrameTime = getAndUpdateFrameTime();
+        const timeNow = new Date();
+        theContext.clearRect(0, 0, 500, 500); // clear canvas
+        gameState.getCirclesToDraw().forEach((p, index) => {
+          if (p.isDisplayed) {
+            //  Circles
+            theContext.fillStyle = gameState.isPieceSelected(p)
+              ? "green"
+              : "red";
+            const pieceCentre = gameState.getPieceCentre(
+              index,
+              lastFrameTime,
+              timeNow
+            );
+            theContext.fill(gameState.updatePiecePath(p, pieceCentre));
+            //  Numbers
+            drawText(
+              theContext,
+              `${p.data.calcNumber}`,
+              pieceCentre,
+              "blue",
+              "32px Impact"
+            );
+          }
+        });
+        if (gameState.gameIsWon()) {
+          drawText(theContext, "✓", centre, "green", "72px Impact");
+        } else {
           drawText(
             theContext,
-            `${p.data.calcNumber}`,
-            pieceCentre,
-            "blue",
-            "32px Impact"
+            gameState.getCurrentTargetText(),
+            centre,
+            "black",
+            "48px Impact"
           );
         }
-      });
-      if (gameState.gameIsWon()) {
-        drawText(theContext, "✓", centre, "green", "72px Impact");
-      } else {
-        drawText(
-          theContext,
-          gameState.getCurrentTargetText(),
-          centre,
-          "black",
-          "48px Impact"
-        );
+      } catch (error) {
+        console.error(error);
       }
       window.requestAnimationFrame(drawCircles);
     }
