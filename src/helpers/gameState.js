@@ -5,19 +5,11 @@ const fullCircle = 2 * Math.PI;
 export function initialiseGameState(centre) {
   /**
    * @typedef {{calcNumber: number}} TargetData
-   * @typedef {{isDisplayed: boolean, data: TargetData}} PieceData
+   * @typedef {{isDisplayed: boolean, data: TargetData, path:Path2D}} PieceData
    * @type {[PieceData]} */
   let circles;
   /** @type {[number]} */
   let dataNumbers;
-  /**
-   * @typedef {{hasPlayed: boolean, selectedPiece: PieceData}} Play
-   * @type {{first: Play, second: Play}}
-   */
-  const currentTurnData = {
-    first: initialPlay(),
-    second: initialPlay(),
-  };
   let currentLevel = 0;
   const circleRadius = 150;
 
@@ -30,43 +22,13 @@ export function initialiseGameState(centre) {
       calcNumber: dataNumber,
     },
     isDisplayed: true,
+    path: null,
   });
-
-  function initialiseGame() {
-    dataNumbers = [25, 37, 25, 256, 42, 56, 97, 60];
-    currentLevel = 0;
-    initialiseLevel();
-  }
-
-  function initialiseLevel() {
-    const targetNumber = dataNumbers[currentLevel];
-    const totalPairs = 4;
-    let currentPair = 0;
-    circles = [];
-    while (currentPair < totalPairs) {
-      const firstNumber = Math.round(Math.random() * targetNumber);
-      const secondNumber = targetNumber - firstNumber;
-      circles.push(initACircle(firstNumber));
-      circles.push(initACircle(secondNumber));
-      currentPair++;
-    }
-    shuffleCircles();
-  }
-
-  function shuffleCircles() {
-    const newCircles = [];
-    for (let index = circles.length - 1; index >= 0; index--) {
-      const indexToRemove = Math.round(Math.random()) * (circles.length - 1);
-      newCircles.push(circles[indexToRemove]);
-      circles.splice(indexToRemove, 1);
-    }
-    circles = newCircles;
-  }
 
   /**
    * @returns {[PieceData]}
    */
-  const getCirclesToDraw = () => circles.filter((c) => c.isDisplayed);
+  const getCirclesToDraw = () => circles; //.filter((c) => c.isDisplayed);
 
   /**
    * @returns {boolean}
@@ -101,6 +63,64 @@ export function initialiseGameState(centre) {
     circles.find((c) => theContext.isPointInPath(c.path, x, y));
 
   /**
+   * @returns {Play}
+   */
+  const initialPlay = () => ({ hasPlayed: false, selectedPiece: null });
+
+  /**
+   * @param {PieceData} p_Circle
+   * @returns {Play}
+   */
+  const doPlay = (p_Circle) => ({ hasPlayed: true, selectedPiece: p_Circle });
+
+  /**
+   *
+   * @param {PieceData} p_Piece
+   */
+  const isPieceSelected = (p_Piece) =>
+    p_Piece === currentTurnData.first.selectedPiece;
+
+  /**
+   * @typedef {{hasPlayed: boolean, selectedPiece: PieceData}} Play
+   * @type {{first: Play, second: Play}}
+   */
+  const currentTurnData = {
+    first: initialPlay(),
+    second: initialPlay(),
+  };
+
+  function initialiseGame() {
+    dataNumbers = [25, 37 /*, 25, 256, 42, 56, 97, 60*/];
+    currentLevel = 0;
+    initialiseLevel();
+  }
+
+  function initialiseLevel() {
+    const targetNumber = dataNumbers[currentLevel];
+    const totalPairs = 4;
+    let currentPair = 0;
+    circles = [];
+    while (currentPair < totalPairs) {
+      const firstNumber = Math.round(Math.random() * targetNumber);
+      const secondNumber = targetNumber - firstNumber;
+      circles.push(initACircle(firstNumber));
+      circles.push(initACircle(secondNumber));
+      currentPair++;
+    }
+    shuffleCircles();
+  }
+
+  function shuffleCircles() {
+    const newCircles = [];
+    for (let index = circles.length - 1; index >= 0; index--) {
+      const indexToRemove = Math.round(Math.random()) * (circles.length - 1);
+      newCircles.push(circles[indexToRemove]);
+      circles.splice(indexToRemove, 1);
+    }
+    circles = newCircles;
+  }
+
+  /**
    * @param {CanvasRenderingContext2D} theContext
    * @param {number} x
    * @param {number} y
@@ -113,17 +133,6 @@ export function initialiseGameState(centre) {
   }
 
   /**
-   * @returns {Play}
-   */
-  const initialPlay = () => ({ hasPlayed: false, selectedPiece: null });
-
-  /**
-   * @param {PieceData} p_Circle
-   * @returns {Play}
-   */
-  const doPlay = (p_Circle) => ({ hasPlayed: true, selectedPiece: p_Circle });
-
-  /**
    * @param {PieceData} hitCircle
    */
   function onCircleClicked(hitCircle) {
@@ -133,10 +142,7 @@ export function initialiseGameState(centre) {
       currentTurnData.first.selectedPiece !== hitCircle
     ) {
       currentTurnData.second = newPlay;
-      const isTurnWon = turnIsWon();
-      currentTurnData.first = initialPlay();
-      currentTurnData.second = initialPlay();
-      if (isTurnWon) {
+      if (turnIsWon()) {
         //  Right. Get rid of the circles.
         currentTurnData.first.selectedPiece.isDisplayed = false;
         currentTurnData.second.selectedPiece.isDisplayed = false;
@@ -147,17 +153,13 @@ export function initialiseGameState(centre) {
           }
         }
       }
+      //  Reset the turn
+      currentTurnData.first = initialPlay();
+      currentTurnData.second = initialPlay();
     } else {
       currentTurnData.first = newPlay;
     }
   }
-
-  /**
-   *
-   * @param {PieceData} p_Piece
-   */
-  const isPieceSelected = (p_Piece) =>
-    p_Piece === currentTurnData.first.selectedPiece;
 
   /**
    * @param {PieceData} p_Piece
@@ -165,19 +167,22 @@ export function initialiseGameState(centre) {
    * @returns {DOMPointReadOnly}
    */
   function getPieceCentre(p_Index) {
-    const partCircle = fullCircle * (p_Index + 1 / circles.length);
+    const partCircle = fullCircle * ((p_Index + 1) / circles.length);
     const circleX = centre.x + circleRadius * Math.sin(partCircle);
     const circleY = centre.y + circleRadius * Math.cos(partCircle);
     return new DOMPointReadOnly(circleX, circleY);
   }
 
   /**
+   * @param {PieceData} p_Piece
    * @param {DOMPointReadOnly} p_Centre
    */
-  function getPiecePath(p_Centre) {
+  function updatePiecePath(p_Piece, p_Centre) {
     const path = new Path2D();
+    //  Save the path for collision detection
     path.arc(p_Centre.x, p_Centre.y, 50, 0, fullCircle);
-    return path;
+    p_Piece.path = path;
+    return p_Piece.path;
   }
 
   return {
@@ -189,6 +194,6 @@ export function initialiseGameState(centre) {
     getCurrentTargetText,
     isPieceSelected,
     getPieceCentre,
-    getPiecePath,
+    updatePiecePath,
   };
 }

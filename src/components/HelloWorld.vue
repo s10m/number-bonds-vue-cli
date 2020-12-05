@@ -62,21 +62,23 @@ export default {
     function drawCircles() {
       theContext.clearRect(0, 0, 500, 500); // clear canvas
       gameState.getCirclesToDraw().forEach((p, index) => {
-        //  Circles
-        theContext.fillStyle = gameState.isPieceSelected(p) ? "green" : "red";
-        const pieceCentre = gameState.getPieceCentre(index);
-        theContext.fill(gameState.getPiecePath(pieceCentre));
-        //  Numbers
-        drawText(
-          theContext,
-          `${p.data.calcNumber}`,
-          p.position,
-          "blue",
-          "32px Impact"
-        );
+        if (p.isDisplayed) {
+          //  Circles
+          theContext.fillStyle = gameState.isPieceSelected(p) ? "green" : "red";
+          const pieceCentre = gameState.getPieceCentre(index);
+          theContext.fill(gameState.updatePiecePath(p, pieceCentre));
+          //  Numbers
+          drawText(
+            theContext,
+            `${p.data.calcNumber}`,
+            pieceCentre,
+            "blue",
+            "32px Impact"
+          );
+        }
       });
       if (gameState.gameIsWon()) {
-        drawText(theContext, "✓", centre, "green", "48px Impact");
+        drawText(theContext, "✓", centre, "green", "72px Impact");
       } else {
         drawText(
           theContext,
