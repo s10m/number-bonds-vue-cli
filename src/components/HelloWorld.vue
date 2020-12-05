@@ -37,7 +37,6 @@ export default {
       theCanvas = document.getElementById("gameCanvas");
       theContext = theCanvas.getContext("2d");
       gameState.initialiseGame();
-      lastFrameStart = new Date();
       window.requestAnimationFrame(drawCircles);
     }
     /**
@@ -60,19 +59,12 @@ export default {
             2
       );
     }
-    /**@type {Date} */
-    let lastFrameStart;
-    function getAndUpdateFrameTime() {
-      const newFrameStart = new Date();
-      const lastFrameTime = newFrameStart - lastFrameStart;
-      lastFrameStart = newFrameStart;
-      return lastFrameTime;
-    }
-
+    let timeNow = new Date();
     function drawCircles() {
       try {
-        const lastFrameTime = getAndUpdateFrameTime();
-        const timeNow = new Date();
+        if (!isStopped) {
+          timeNow = new Date();
+        }
         theContext.clearRect(0, 0, 500, 500); // clear canvas
         gameState.getCirclesToDraw().forEach((p, index) => {
           if (p.isDisplayed) {
@@ -80,11 +72,7 @@ export default {
             theContext.fillStyle = gameState.isPieceSelected(p)
               ? "green"
               : "red";
-            const pieceCentre = gameState.getPieceCentre(
-              index,
-              lastFrameTime,
-              timeNow
-            );
+            const pieceCentre = gameState.getPieceCentre(index, timeNow);
             theContext.fill(gameState.updatePiecePath(p, pieceCentre));
             //  Numbers
             drawText(
@@ -107,13 +95,25 @@ export default {
             "48px Impact"
           );
         }
+        if (isStopped) {
+          theContext.fillStyle = "gold";
+          theContext.beginPath();
+          theContext.arc(lastClick.x, lastClick.y, 2, 0, 2 * Math.PI);
+          theContext.fill();
+        }
       } catch (error) {
         console.error(error);
       }
       window.requestAnimationFrame(drawCircles);
     }
+    let isStopped = false;
+    /** @type {DOMPointReadOnly} */
+    let lastClick = null;
     /**@param {MouseEvent} e */
     function gameCanvasClick(e) {
+      isStopped = !isStopped;
+      lastClick = new DOMPointReadOnly(e.offsetX, e.offsetY);
+      console.log(lastClick);
       gameState.onGameClick(theContext, e.offsetX, e.offsetY);
     }
     return { gameCanvasClick };

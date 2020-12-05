@@ -128,7 +128,10 @@ export function initialiseGameState(centre) {
   function onGameClick(theContext, x, y) {
     const clickedCircle = getHitCircle(theContext, x, y);
     if (clickedCircle) {
+      console.log("hit");
       onCircleClicked(clickedCircle);
+    } else {
+      console.log("miss");
     }
   }
 
@@ -165,10 +168,9 @@ export function initialiseGameState(centre) {
   /**
    * @param {number} p_Index
    * @param {Date} p_Now
-   * @param {number} p_MilliSecondsPerFrame
    * @returns {DOMPointReadOnly}
    */
-  function getPieceCentre(p_Index, p_MilliSecondsPerFrame, p_Now) {
+  function getPieceCentre(p_Index, p_Now) {
     const partCircle =
       fullCircle *
       //  Simple "How far along is based on it's index"
