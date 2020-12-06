@@ -5,7 +5,7 @@ const fullCircle = 2 * Math.PI;
 export function initialiseGameState(centre) {
   /**
    * @typedef {{calcNumber: number}} TargetData
-   * @typedef {{isDisplayed: boolean, data: TargetData, path:Path2D, popStartTime: Date}} PieceData
+   * @typedef {{isDisplayed: boolean, data: TargetData, path:Path2D, popStartTime: Date, popEndTime: Date}} PieceData
    * @type {[PieceData]} */
   let circles;
   /** @type {[number]} */
@@ -24,6 +24,7 @@ export function initialiseGameState(centre) {
     isDisplayed: true,
     path: null,
     popStartTime: null,
+    popEndTime: null,
   });
 
   /**
@@ -62,7 +63,9 @@ export function initialiseGameState(centre) {
    * @returns {PieceData}
    */
   const getHitCircle = (theContext, x, y) =>
-    circles.find((c) => theContext.isPointInPath(c.path, x, y));
+    circles
+      .filter((c) => c.isDisplayed)
+      .find((c) => theContext.isPointInPath(c.path, x, y));
 
   /**
    * @returns {Play}
@@ -93,7 +96,7 @@ export function initialiseGameState(centre) {
     p_Piece === currentTurnData.first.selectedPiece;
 
   function initialiseGame() {
-    dataNumbers = [25, 37 /*, 25, 256, 42, 56, 97, 60*/];
+    dataNumbers = [25 /*, 37 , 25, 256, 42, 56, 97, 60*/];
     currentLevel = 0;
     initialiseNewLevel();
   }
@@ -145,6 +148,9 @@ export function initialiseGameState(centre) {
    */
   function startPopping(p_Piece, p_Now) {
     p_Piece.popStartTime = p_Now;
+    const endTime = new Date(p_Now);
+    endTime.setSeconds(endTime.getSeconds() + SECONDS_PER_POP);
+    p_Piece.popEndTime = endTime;
   }
 
   /**
@@ -162,12 +168,6 @@ export function initialiseGameState(centre) {
         //  Right. Get rid of the circles.
         startPopping(currentTurnData.first.selectedPiece, now);
         startPopping(currentTurnData.second.selectedPiece, now);
-        if (levelIsWon()) {
-          currentLevel++;
-          if (!gameIsWon()) {
-            initialiseNewLevel();
-          }
-        }
       }
       //  Reset the turn
       currentTurnData.first = initialPlay();
@@ -195,7 +195,7 @@ export function initialiseGameState(centre) {
     return new DOMPointReadOnly(circleX, circleY);
   }
 
-  const SECONDS_PER_POP = 3;
+  const SECONDS_PER_POP = 1;
   /**
    *
    * @param {PieceData} p_Piece
@@ -210,14 +210,16 @@ export function initialiseGameState(centre) {
       //  from 0 to 1.5PI(starts at 1, goes to 0, then goes to 2)
       return (
         baseRadius *
-        Math.sin(
-          //  Proportion gone
-          ((p_Now - p_Piece.popStartTime) / (SECONDS_PER_POP * 1000)) *
-            //  Range 0 - 1.5PI
-            (1.5 * Math.PI) +
-            //  Plus PI
-            Math.PI
-        )
+        (1 +
+          Math.sin(
+            //  Proportion gone
+            ((p_Now - p_Piece.popStartTime) /
+              (p_Piece.popEndTime - p_Piece.popStartTime)) *
+              //  Range 0 - 1.5PI
+              (1.5 * Math.PI) +
+              //  Plus PI
+              Math.PI
+          ))
       );
     }
   }
@@ -238,16 +240,19 @@ export function initialiseGameState(centre) {
 
   /**
    *
-   * @param {PieceData} p_Piece
    * @param {Date} p_Now
    */
-  function onGameTick(p_Piece, p_Now) {
-    if (p_Piece.popStartTime !== null) {
-      p_Piece.isDisplayed =
-        p_Now >=
-        p_Piece.popStartTime.setSeconds(
-          p_Piece.popStartTime.getSeconds() + SECONDS_PER_POP
-        );
+  function onGameTick(p_Now) {
+    circles.forEach((c) => {
+      if (c.popStartTime !== null) {
+        c.isDisplayed = p_Now < c.popEndTime;
+      }
+    });
+    if (!gameIsWon() && levelIsWon()) {
+      currentLevel++;
+      if (!gameIsWon()) {
+        initialiseNewLevel();
+      }
     }
   }
 
