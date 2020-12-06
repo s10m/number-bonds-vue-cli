@@ -63,6 +63,7 @@ export default {
         theContext.clearRect(0, 0, 500, 500); // clear canvas
         gameState.getCirclesToDraw().forEach((p, index) => {
           if (p.isDisplayed) {
+            gameState.onGameTick(p, timeNow);
             //  Circles
             theContext.fillStyle = gameState.isPieceSelected(p)
               ? "green"

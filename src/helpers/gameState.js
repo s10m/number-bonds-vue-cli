@@ -27,16 +27,6 @@ export function initialiseGameState(centre) {
   });
 
   /**
-   * @typedef {{hasPlayed: boolean, selectedPiece: PieceData}} Play
-   * @typedef {{first: Play, second: Play}} Turn
-   * @type {Turn}
-   */
-  const currentTurnData = {
-    first: initialPlay(),
-    second: initialPlay(),
-  };
-
-  /**
    * @returns {[PieceData]}
    */
   const getCirclesToDraw = () => circles; //.filter((c) => c.isDisplayed);
@@ -47,8 +37,8 @@ export function initialiseGameState(centre) {
    */
   const turnIsWon = (p_Turn) =>
     dataNumbers[currentLevel] ===
-    currentTurnData.first.selectedPiece.data.calcNumber +
-      currentTurnData.second.selectedPiece.data.calcNumber;
+    p_Turn.first.selectedPiece.data.calcNumber +
+      p_Turn.second.selectedPiece.data.calcNumber;
 
   /**
    * @returns {boolean}
@@ -84,6 +74,16 @@ export function initialiseGameState(centre) {
    * @returns {Play}
    */
   const doPlay = (p_Circle) => ({ hasPlayed: true, selectedPiece: p_Circle });
+
+  /**
+   * @typedef {{hasPlayed: boolean, selectedPiece: PieceData}} Play
+   * @typedef {{first: Play, second: Play}} Turn
+   * @type {Turn}
+   */
+  const currentTurnData = {
+    first: initialPlay(),
+    second: initialPlay(),
+  };
 
   /**
    *
@@ -144,7 +144,6 @@ export function initialiseGameState(centre) {
    * @param {Date} p_Now
    */
   function startPopping(p_Piece, p_Now) {
-    p_Piece.isDisplayed = false;
     p_Piece.popStartTime = p_Now;
   }
 
@@ -237,6 +236,21 @@ export function initialiseGameState(centre) {
     return p_Piece.path;
   }
 
+  /**
+   *
+   * @param {PieceData} p_Piece
+   * @param {Date} p_Now
+   */
+  function onGameTick(p_Piece, p_Now) {
+    if (p_Piece.popStartTime !== null) {
+      p_Piece.isDisplayed =
+        p_Now >=
+        p_Piece.popStartTime.setSeconds(
+          p_Piece.popStartTime.getSeconds() + SECONDS_PER_POP
+        );
+    }
+  }
+
   return {
     initialiseGame,
     initialiseNewLevel,
@@ -247,5 +261,6 @@ export function initialiseGameState(centre) {
     isPieceSelected,
     getPieceCentre,
     updatePiecePath,
+    onGameTick,
   };
 }
