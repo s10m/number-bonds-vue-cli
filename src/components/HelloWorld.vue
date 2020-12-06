@@ -24,8 +24,6 @@ import { initialiseGameState } from "../helpers/gameState";
 export default {
   name: "HelloWorld",
   setup() {
-    /**@type {HTMLCanvasElement} */
-    let theCanvas;
     /**@type {CanvasRenderingContext2D} */
     let theContext;
     const centre = new DOMPointReadOnly(250, 250);
@@ -34,7 +32,7 @@ export default {
       initialise();
     });
     function initialise() {
-      theCanvas = document.getElementById("gameCanvas");
+      const theCanvas = document.getElementById("gameCanvas");
       theContext = theCanvas.getContext("2d");
       gameState.initialiseGame();
       window.requestAnimationFrame(drawCircles);
@@ -59,12 +57,9 @@ export default {
             2
       );
     }
-    let timeNow = new Date();
     function drawCircles() {
       try {
-        if (!isStopped) {
-          timeNow = new Date();
-        }
+        const timeNow = new Date();
         theContext.clearRect(0, 0, 500, 500); // clear canvas
         gameState.getCirclesToDraw().forEach((p, index) => {
           if (p.isDisplayed) {
@@ -74,46 +69,25 @@ export default {
               : "red";
             const pieceCentre = gameState.getPieceCentre(index, timeNow);
             theContext.fill(gameState.updatePiecePath(p, pieceCentre));
+            const toDisplay = `${p.data.calcNumber}`;
             //  Numbers
-            drawText(
-              theContext,
-              `${p.data.calcNumber}`,
-              pieceCentre,
-              "blue",
-              "32px Impact"
-            );
+            drawText(theContext, toDisplay, pieceCentre, "blue", "32px Impact");
           }
         });
         if (gameState.gameIsWon()) {
           drawText(theContext, "✓", centre, "green", "72px Impact");
         } else {
-          drawText(
-            theContext,
-            gameState.getCurrentTargetText(),
-            centre,
-            "black",
-            "48px Impact"
-          );
-        }
-        if (isStopped) {
-          theContext.fillStyle = "gold";
-          theContext.beginPath();
-          theContext.arc(lastClick.x, lastClick.y, 2, 0, 2 * Math.PI);
-          theContext.fill();
+          const targetText = gameState.getCurrentTargetText();
+          drawText(theContext, targetText, centre, "black", "48px Impact");
         }
       } catch (error) {
         console.error(error);
       }
       window.requestAnimationFrame(drawCircles);
     }
-    let isStopped = false;
-    /** @type {DOMPointReadOnly} */
-    let lastClick = null;
+
     /**@param {MouseEvent} e */
     function gameCanvasClick(e) {
-      isStopped = !isStopped;
-      lastClick = new DOMPointReadOnly(e.offsetX, e.offsetY);
-      console.log(lastClick);
       gameState.onGameClick(theContext, e.offsetX, e.offsetY);
     }
     return { gameCanvasClick };
