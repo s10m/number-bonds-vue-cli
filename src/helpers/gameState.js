@@ -26,14 +26,25 @@ export function initialiseGameState(centre) {
   });
 
   /**
+   * @typedef {{hasPlayed: boolean, selectedPiece: PieceData}} Play
+   * @typedef {{first: Play, second: Play}} Turn
+   * @type {Turn}
+   */
+  const currentTurnData = {
+    first: initialPlay(),
+    second: initialPlay(),
+  };
+
+  /**
    * @returns {[PieceData]}
    */
   const getCirclesToDraw = () => circles; //.filter((c) => c.isDisplayed);
 
   /**
+   * @param {Turn} p_Turn
    * @returns {boolean}
    */
-  const turnIsWon = () =>
+  const turnIsWon = (p_Turn) =>
     dataNumbers[currentLevel] ===
     currentTurnData.first.selectedPiece.data.calcNumber +
       currentTurnData.second.selectedPiece.data.calcNumber;
@@ -80,22 +91,13 @@ export function initialiseGameState(centre) {
   const isPieceSelected = (p_Piece) =>
     p_Piece === currentTurnData.first.selectedPiece;
 
-  /**
-   * @typedef {{hasPlayed: boolean, selectedPiece: PieceData}} Play
-   * @type {{first: Play, second: Play}}
-   */
-  const currentTurnData = {
-    first: initialPlay(),
-    second: initialPlay(),
-  };
-
   function initialiseGame() {
     dataNumbers = [25, 37 /*, 25, 256, 42, 56, 97, 60*/];
     currentLevel = 0;
-    initialiseLevel();
+    initialiseNewLevel();
   }
 
-  function initialiseLevel() {
+  function initialiseNewLevel() {
     const targetNumber = dataNumbers[currentLevel];
     const totalPairs = 4;
     let currentPair = 0;
@@ -145,14 +147,14 @@ export function initialiseGameState(centre) {
       currentTurnData.first.selectedPiece !== hitCircle
     ) {
       currentTurnData.second = newPlay;
-      if (turnIsWon()) {
+      if (turnIsWon(currentTurnData)) {
         //  Right. Get rid of the circles.
         currentTurnData.first.selectedPiece.isDisplayed = false;
         currentTurnData.second.selectedPiece.isDisplayed = false;
         if (levelIsWon()) {
           currentLevel++;
           if (!gameIsWon()) {
-            initialiseLevel();
+            initialiseNewLevel();
           }
         }
       }
@@ -196,7 +198,7 @@ export function initialiseGameState(centre) {
 
   return {
     initialiseGame,
-    initialiseLevel,
+    initialiseNewLevel,
     getCirclesToDraw,
     gameIsWon,
     onGameClick,
