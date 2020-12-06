@@ -5,7 +5,7 @@ const fullCircle = 2 * Math.PI;
 export function initialiseGameState(centre) {
   /**
    * @typedef {{calcNumber: number}} TargetData
-   * @typedef {{isDisplayed: boolean, data: TargetData, path:Path2D}} PieceData
+   * @typedef {{isDisplayed: boolean, data: TargetData, path:Path2D, popStartTime: Date}} PieceData
    * @type {[PieceData]} */
   let circles;
   /** @type {[number]} */
@@ -23,6 +23,7 @@ export function initialiseGameState(centre) {
     },
     isDisplayed: true,
     path: null,
+    popStartTime: null,
   });
 
   /**
@@ -138,6 +139,16 @@ export function initialiseGameState(centre) {
   }
 
   /**
+   *
+   * @param {PieceData} p_Piece
+   * @param {Date} p_Now
+   */
+  function startPopping(p_Piece, p_Now) {
+    p_Piece.isDisplayed = false;
+    p_Piece.popStartTime = p_Now;
+  }
+
+  /**
    * @param {PieceData} hitCircle
    */
   function onCircleClicked(hitCircle) {
@@ -148,9 +159,10 @@ export function initialiseGameState(centre) {
     ) {
       currentTurnData.second = newPlay;
       if (turnIsWon(currentTurnData)) {
+        const now = new Date();
         //  Right. Get rid of the circles.
-        currentTurnData.first.selectedPiece.isDisplayed = false;
-        currentTurnData.second.selectedPiece.isDisplayed = false;
+        startPopping(currentTurnData.first.selectedPiece, now);
+        startPopping(currentTurnData.second.selectedPiece, now);
         if (levelIsWon()) {
           currentLevel++;
           if (!gameIsWon()) {
@@ -184,14 +196,43 @@ export function initialiseGameState(centre) {
     return new DOMPointReadOnly(circleX, circleY);
   }
 
+  const SECONDS_PER_POP = 3;
+  /**
+   *
+   * @param {PieceData} p_Piece
+   * @param {Date} p_Now
+   */
+  function getPieceSize(p_Piece, p_Now) {
+    const baseRadius = 50;
+    if (p_Piece.popStartTime === null) {
+      return baseRadius;
+    } else {
+      //  y=sin(x+pi)+1
+      //  from 0 to 1.5PI(starts at 1, goes to 0, then goes to 2)
+      return (
+        baseRadius *
+        Math.sin(
+          //  Proportion gone
+          ((p_Now - p_Piece.popStartTime) / (SECONDS_PER_POP * 1000)) *
+            //  Range 0 - 1.5PI
+            (1.5 * Math.PI) +
+            //  Plus PI
+            Math.PI
+        )
+      );
+    }
+  }
+
   /**
    * @param {PieceData} p_Piece
    * @param {DOMPointReadOnly} p_Centre
+   * @param {Date} p_Now
    */
-  function updatePiecePath(p_Piece, p_Centre) {
+  function updatePiecePath(p_Piece, p_Centre, p_Now) {
+    const radius = getPieceSize(p_Piece, p_Now);
     const path = new Path2D();
     //  Save the path for collision detection
-    path.arc(p_Centre.x, p_Centre.y, 50, 0, fullCircle);
+    path.arc(p_Centre.x, p_Centre.y, radius, 0, fullCircle);
     p_Piece.path = path;
     return p_Piece.path;
   }

@@ -68,7 +68,7 @@ export default {
               ? "green"
               : "red";
             const pieceCentre = gameState.getPieceCentre(index, timeNow);
-            theContext.fill(gameState.updatePiecePath(p, pieceCentre));
+            theContext.fill(gameState.updatePiecePath(p, pieceCentre, timeNow));
             const toDisplay = `${p.data.calcNumber}`;
             //  Numbers
             drawText(theContext, toDisplay, pieceCentre, "blue", "32px Impact");
