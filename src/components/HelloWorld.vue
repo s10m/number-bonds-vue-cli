@@ -65,12 +65,16 @@ export default {
         gameState.getCirclesToDraw().forEach((p, index) => {
           if (p.isDisplayed) {
             //  Circles
-            theContext.fillStyle = gameState.getPieceFillStyle(p, timeNow);
+            const circleAlpha = gameState.getPieceAlpha(p, timeNow);
+            theContext.fillStyle = gameState.isPieceSelected(p)
+              ? `rgba(0, 255, 0, ${circleAlpha})`
+              : `rgba(255, 0, 0, ${circleAlpha})`;
             const pieceCentre = gameState.getPieceCentre(index, timeNow);
             theContext.fill(gameState.updatePiecePath(p, pieceCentre, timeNow));
             const toDisplay = `${p.data.calcNumber}`;
+            const textC = `rgba(0, 0, 255, ${circleAlpha})`;
             //  Numbers
-            drawText(theContext, toDisplay, pieceCentre, "blue", "32px Impact");
+            drawText(theContext, toDisplay, pieceCentre, textC, "32px Impact");
           }
         });
         if (gameState.gameIsWon()) {
