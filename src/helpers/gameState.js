@@ -256,6 +256,32 @@ export function initialiseGameState(centre) {
     }
   }
 
+  /**
+   *
+   * @param {PieceData} p_Piece
+   * @param {Date} p_Now
+   */
+  function getIdlePieceColour(p_Piece, p_Now) {
+    if (p_Piece.popStartTime !== null) {
+      const donePercentage =
+        (p_Piece.popEndTime - p_Now) / (SECONDS_PER_POP * 1000);
+      return `rgba(255, 0, 0, ${donePercentage})`;
+    } else {
+      return "red";
+    }
+  }
+
+  /**
+   *
+   * @param {PieceData} p_Piece
+   * @param {Date} p_Now
+   */
+  function getPieceFillStyle(p_Piece, p_Now) {
+    return isPieceSelected(p_Piece)
+      ? "green"
+      : getIdlePieceColour(p_Piece, p_Now);
+  }
+
   return {
     initialiseGame,
     initialiseNewLevel,
@@ -267,5 +293,6 @@ export function initialiseGameState(centre) {
     getPieceCentre,
     updatePiecePath,
     onGameTick,
+    getPieceFillStyle,
   };
 }

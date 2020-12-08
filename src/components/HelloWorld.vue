@@ -65,9 +65,7 @@ export default {
         gameState.getCirclesToDraw().forEach((p, index) => {
           if (p.isDisplayed) {
             //  Circles
-            theContext.fillStyle = gameState.isPieceSelected(p)
-              ? "green"
-              : "red";
+            theContext.fillStyle = gameState.getPieceFillStyle(p, timeNow);
             const pieceCentre = gameState.getPieceCentre(index, timeNow);
             theContext.fill(gameState.updatePiecePath(p, pieceCentre, timeNow));
             const toDisplay = `${p.data.calcNumber}`;
