@@ -12,6 +12,7 @@ export function initialiseGameState(centre) {
   let dataNumbers;
   let currentLevel = 0;
   const circleRadius = 150;
+  const innerCircleRadius = circleRadius / 2;
 
   /**
    * @param {number} dataNumber
@@ -74,12 +75,17 @@ export function initialiseGameState(centre) {
 
   /**
    * @param {PieceData} p_Circle
+   * @param {Date} p_Now
    * @returns {Play}
    */
-  const doPlay = (p_Circle) => ({ hasPlayed: true, selectedPiece: p_Circle });
+  const doPlay = (p_Circle, p_Now) => ({
+    hasPlayed: true,
+    selectedPiece: p_Circle,
+    selectionTime: p_Now,
+  });
 
   /**
-   * @typedef {{hasPlayed: boolean, selectedPiece: PieceData}} Play
+   * @typedef {{hasPlayed: boolean, selectedPiece: PieceData, selectionTime: Date}} Play
    * @typedef {{first: Play, second: Play}} Turn
    * @type {Turn}
    */
@@ -127,6 +133,18 @@ export function initialiseGameState(centre) {
   }
 
   /**
+   *
+   * @param {Date} p_Now
+   * @param {number} p_SecondsToAdd
+   * @returns {Date}
+   */
+  function addSeconds(p_Now, p_SecondsToAdd) {
+    const newDate = new Date(p_Now);
+    newDate.setSeconds(newDate.getSeconds() + p_SecondsToAdd);
+    return newDate;
+  }
+
+  /**
    * @param {CanvasRenderingContext2D} theContext
    * @param {number} x
    * @param {number} y
@@ -148,23 +166,21 @@ export function initialiseGameState(centre) {
    */
   function startPopping(p_Piece, p_Now) {
     p_Piece.popStartTime = p_Now;
-    const endTime = new Date(p_Now);
-    endTime.setSeconds(endTime.getSeconds() + SECONDS_PER_POP);
-    p_Piece.popEndTime = endTime;
+    p_Piece.popEndTime = addSeconds(p_Now, SECONDS_PER_POP);
   }
 
   /**
    * @param {PieceData} hitCircle
    */
   function onCircleClicked(hitCircle) {
-    const newPlay = doPlay(hitCircle);
+    const now = new Date();
+    const newPlay = doPlay(hitCircle, now);
     if (
       currentTurnData.first.hasPlayed &&
       currentTurnData.first.selectedPiece !== hitCircle
     ) {
       currentTurnData.second = newPlay;
       if (turnIsWon(currentTurnData)) {
-        const now = new Date();
         //  Right. Get rid of the circles.
         startPopping(currentTurnData.first.selectedPiece, now);
         startPopping(currentTurnData.second.selectedPiece, now);
@@ -178,20 +194,33 @@ export function initialiseGameState(centre) {
   }
 
   const SECONDS_PER_SPIN = 10;
+  const SECONDS_PER_SELECT = 3;
   /**
    * @param {number} p_Index
    * @param {Date} p_Now
    * @returns {DOMPointReadOnly}
    */
   function getPieceCentre(p_Index, p_Now) {
+    let pieceRadius;
+    if (isPieceSelected(circles[p_Index])) {
+      const progressFactor = Math.min(
+        1,
+        (p_Now - currentTurnData.first.selectionTime) /
+          (SECONDS_PER_SELECT * 1000)
+      );
+      pieceRadius =
+        circleRadius - (circleRadius - innerCircleRadius) * progressFactor;
+    } else {
+      pieceRadius = circleRadius;
+    }
     const partCircle =
       fullCircle *
       //  Simple "How far along is based on it's index"
       ((p_Index + 1) / circles.length +
         //  Extra bit based on the current time (spinning at the rate of SECONDS_PER_SPIN)
         p_Now / (SECONDS_PER_SPIN * 1_000));
-    const circleX = centre.x + circleRadius * Math.sin(partCircle);
-    const circleY = centre.y + circleRadius * Math.cos(partCircle);
+    const circleX = centre.x + pieceRadius * Math.sin(partCircle);
+    const circleY = centre.y + pieceRadius * Math.cos(partCircle);
     return new DOMPointReadOnly(circleX, circleY);
   }
 
@@ -213,8 +242,7 @@ export function initialiseGameState(centre) {
         (1 +
           Math.sin(
             //  Proportion gone
-            ((p_Now - p_Piece.popStartTime) /
-              (p_Piece.popEndTime - p_Piece.popStartTime)) *
+            ((p_Now - p_Piece.popStartTime) / (SECONDS_PER_POP * 1000)) *
               //  Range 0 - 1.5PI
               (1.5 * Math.PI) +
               //  Plus PI
@@ -264,7 +292,7 @@ export function initialiseGameState(centre) {
   function getPieceAlpha(p_Piece, p_Now) {
     if (p_Piece.popStartTime !== null) {
       //  Popping.
-      return (p_Piece.popEndTime - p_Now) / (SECONDS_PER_POP * 1000);
+      return (p_Now - p_Piece.popStartTime) / (SECONDS_PER_POP * 1000);
     } else {
       //  Not popping.
       return 1;

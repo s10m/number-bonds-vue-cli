@@ -71,17 +71,26 @@ export default {
               : `rgba(255, 0, 0, ${circleAlpha})`;
             const pieceCentre = gameState.getPieceCentre(index, timeNow);
             theContext.fill(gameState.updatePiecePath(p, pieceCentre, timeNow));
-            const toDisplay = `${p.data.calcNumber}`;
-            const textC = `rgba(0, 0, 255, ${circleAlpha})`;
             //  Numbers
-            drawText(theContext, toDisplay, pieceCentre, textC, "32px Impact");
+            drawText(
+              theContext,
+              `${p.data.calcNumber}`,
+              pieceCentre,
+              `rgba(0, 0, 255, ${circleAlpha})`,
+              "32px Impact"
+            );
           }
         });
         if (gameState.gameIsWon()) {
           drawText(theContext, "✓", centre, "green", "72px Impact");
         } else {
-          const targetText = gameState.getCurrentTargetText();
-          drawText(theContext, targetText, centre, "black", "48px Impact");
+          drawText(
+            theContext,
+            gameState.getCurrentTargetText(),
+            centre,
+            "black",
+            "48px Impact"
+          );
         }
       } catch (error) {
         console.error(error);
