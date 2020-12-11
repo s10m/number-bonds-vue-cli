@@ -3,6 +3,7 @@ const fullCircle = 2 * Math.PI;
  * @param {DOMPointReadOnly} centre
  */
 export function initialiseGameState(centre) {
+  //  TODO: sounds
   /**
    * @typedef {{calcNumber: number}} TargetData
    * @typedef {{isDisplayed: boolean, data: TargetData, path:Path2D, popStartTime: Date, popEndTime: Date}} PieceData
@@ -181,10 +182,12 @@ export function initialiseGameState(centre) {
     ) {
       currentTurnData.second = newPlay;
       if (turnIsWon(currentTurnData)) {
+        //  TODO: throw up an arc with + between them then zap
         //  Right. Get rid of the circles.
         startPopping(currentTurnData.first.selectedPiece, now);
         startPopping(currentTurnData.second.selectedPiece, now);
       }
+      //  TODO: Wobble both if wrong
       //  Reset the turn
       currentTurnData.first = initialPlay();
       currentTurnData.second = initialPlay();
