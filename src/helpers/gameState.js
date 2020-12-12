@@ -6,7 +6,17 @@ export function initialiseGameState(centre) {
   //  TODO: sounds
   /**
    * @typedef {{calcNumber: number}} TargetData
-   * @typedef {{isDisplayed: boolean, data: TargetData, path:Path2D, popStartTime: Date, popEndTime: Date}} PieceData
+   * @typedef {{
+   * isDisplayed: boolean,
+   * data: TargetData,
+   * path:Path2D,
+   * popStartTime: Date,
+   * popEndTime: Date,
+   * hasBeenPlayed: boolean,
+   * hasPlayedCorrect: boolean
+   * playMoveStartTime: Date,
+   * playMoveEndTime: Date
+   * }} PieceData
    * @type {[PieceData]} */
   let circles;
   /** @type {[number]} */
@@ -27,6 +37,7 @@ export function initialiseGameState(centre) {
     path: null,
     popStartTime: null,
     popEndTime: null,
+    hasBeenPlayed: false,
   });
 
   /**
@@ -42,6 +53,13 @@ export function initialiseGameState(centre) {
     dataNumbers[currentLevel] ===
     p_Turn.first.selectedPiece.data.calcNumber +
       p_Turn.second.selectedPiece.data.calcNumber;
+
+  /**
+   *
+   * @param {Turn} p_Turn
+   */
+  const turnIsOver = (p_Turn) =>
+    p_Turn.first.hasPlayed && p_Turn.second.hasPlayed;
 
   /**
    * @returns {boolean}
@@ -181,19 +199,10 @@ export function initialiseGameState(centre) {
       currentTurnData.first.selectedPiece !== hitCircle
     ) {
       currentTurnData.second = newPlay;
-      if (turnIsWon(currentTurnData)) {
-        //  TODO: throw up an arc with + between them then zap
-        //  Right. Get rid of the circles.
-        startPopping(currentTurnData.first.selectedPiece, now);
-        startPopping(currentTurnData.second.selectedPiece, now);
-      }
-      //  TODO: Wobble both if wrong
-      //  Reset the turn
-      currentTurnData.first = initialPlay();
-      currentTurnData.second = initialPlay();
     } else {
       currentTurnData.first = newPlay;
     }
+    startMovingIn(hitCircle);
   }
 
   const SECONDS_PER_SPIN = 10;
@@ -269,6 +278,20 @@ export function initialiseGameState(centre) {
     return p_Piece.path;
   }
 
+  const PLAY_MOVE_TIME_SECONDS = 3;
+  /**
+   *
+   * @param {Date} p_Now
+   * @param {PieceData} p_Piece
+   * @param {boolean} p_IsCorrect
+   */
+  function endTurnForPiece(p_Now, p_Piece, p_IsCorrect) {
+    p_Piece.hasBeenPlayed = true;
+    p_Piece.hasPlayedCorrect = p_IsCorrect;
+    p_Piece.playMoveStartTime = p_Now;
+    p_Piece.playMoveEndTime = addSeconds(p_Now, PLAY_MOVE_TIME_SECONDS);
+  }
+
   /**
    *
    * @param {Date} p_Now
@@ -278,7 +301,23 @@ export function initialiseGameState(centre) {
       if (c.popStartTime !== null) {
         c.isDisplayed = p_Now < c.popEndTime;
       }
+      if (c.hasBeenPlayed && p_Now > c.playMoveEndTime) {
+        c.hasBeenPlayed = false;
+        if (c.hasPlayedCorrect) {
+          startPopping(c, p_Now);
+        } else {
+          startMovingOut(c, p_Now);
+        }
+      }
     });
+    if (turnIsOver(currentTurnData)) {
+      const isTurnWon = turnIsWon(currentTurnData);
+      endTurnForPiece(currentTurnData.first.selectedPiece, isTurnWon);
+      endTurnForPiece(currentTurnData.second.selectedPiece, isTurnWon);
+      //  Reset the turn
+      currentTurnData.first = initialPlay();
+      currentTurnData.second = initialPlay();
+    }
     if (!gameIsWon() && levelIsWon()) {
       currentLevel++;
       if (!gameIsWon()) {
