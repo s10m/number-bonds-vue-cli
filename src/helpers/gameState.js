@@ -64,8 +64,11 @@ export function initialiseGameState(centre) {
    *
    * @param {Turn} p_Turn
    */
-  const turnIsOver = (p_Turn) =>
-    p_Turn.first.hasPlayed && p_Turn.second.hasPlayed;
+  const turnIsOver = (p_Turn, p_Now) =>
+    p_Turn.first.hasPlayed &&
+    p_Turn.second.hasPlayed &&
+    p_Turn.first.selectedPiece.moveInEndTime < p_Now &&
+    p_Turn.second.selectedPiece.moveInEndTime < p_Now;
 
   /**
    * @returns {boolean}
@@ -121,7 +124,7 @@ export function initialiseGameState(centre) {
    *
    * @param {PieceData} p_Piece
    */
-  const isPieceSelected = (p_Piece) => p_Piece.hasBeenPlayed;
+  const isPieceSelected = (p_Piece) => p_Piece.isMovingIn;
 
   function initialiseGame() {
     dataNumbers = [25 /*, 37 , 25, 256, 42, 56, 97, 60*/];
@@ -208,6 +211,7 @@ export function initialiseGameState(centre) {
    * @param {Date} p_Now
    */
   function startMovingOut(p_Piece, p_Now) {
+    p_Piece.isMovingIn = false;
     p_Piece.isMovingOut = true;
     p_Piece.moveOutStartTime = p_Now;
     p_Piece.moveOutEndTime = addSeconds(p_Now, SECONDS_PER_SELECT);
@@ -240,14 +244,18 @@ export function initialiseGameState(centre) {
   function getPieceCentre(p_Index, p_Now) {
     let positionRadius;
     const thePiece = circles[p_Index];
-    if (thePiece.isMovingIn && p_Now < thePiece.moveInEndTime) {
+    if (thePiece.isMovingIn) {
       const progressFactor =
-        (p_Now - thePiece.moveInStartTime) / (SECONDS_PER_SELECT * 1000);
+        p_Now > thePiece.moveInEndTime
+          ? 1
+          : (p_Now - thePiece.moveInStartTime) / (SECONDS_PER_SELECT * 1000);
       positionRadius =
         circleRadius - (circleRadius - innerCircleRadius) * progressFactor;
     } else if (thePiece.isMovingOut && p_Now < thePiece.moveOutEndTime) {
       const progressFactor =
-        (p_Now - thePiece.moveOutStartTime) / (SECONDS_PER_SELECT * 1000);
+        p_Now > thePiece.moveOutEndTime
+          ? 1
+          : (p_Now - thePiece.moveOutStartTime) / (SECONDS_PER_SELECT * 1000);
       positionRadius =
         innerCircleRadius + (circleRadius - innerCircleRadius) * progressFactor;
     } else {
@@ -325,10 +333,10 @@ export function initialiseGameState(centre) {
    * @param {Date} p_Now
    */
   function onGameTick(p_Now) {
-    if (turnIsOver(currentTurnData)) {
+    if (turnIsOver(currentTurnData, p_Now)) {
       const isTurnWon = turnIsWon(currentTurnData);
-      endTurnForPiece(currentTurnData.first.selectedPiece, isTurnWon);
-      endTurnForPiece(currentTurnData.second.selectedPiece, isTurnWon);
+      endTurnForPiece(p_Now, currentTurnData.first.selectedPiece, isTurnWon);
+      endTurnForPiece(p_Now, currentTurnData.second.selectedPiece, isTurnWon);
       //  Reset the turn
       currentTurnData.first = initialPlay();
       currentTurnData.second = initialPlay();
