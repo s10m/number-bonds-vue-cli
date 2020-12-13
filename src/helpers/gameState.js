@@ -15,7 +15,13 @@ export function initialiseGameState(centre) {
    * hasBeenPlayed: boolean,
    * hasPlayedCorrect: boolean
    * playMoveStartTime: Date,
-   * playMoveEndTime: Date
+   * playMoveEndTime: Date,
+   * isMovingIn: boolean,
+   * moveInStartTime: Date,
+   * moveInEndTime: Date,
+   * isMovingOut: boolean,
+   * moveOutStartTime: Date,
+   * moveOutEndTime: Date
    * }} PieceData
    * @type {[PieceData]} */
   let circles;
@@ -94,17 +100,15 @@ export function initialiseGameState(centre) {
 
   /**
    * @param {PieceData} p_Circle
-   * @param {Date} p_Now
    * @returns {Play}
    */
-  const doPlay = (p_Circle, p_Now) => ({
+  const doPlay = (p_Circle) => ({
     hasPlayed: true,
     selectedPiece: p_Circle,
-    selectionTime: p_Now,
   });
 
   /**
-   * @typedef {{hasPlayed: boolean, selectedPiece: PieceData, selectionTime: Date}} Play
+   * @typedef {{hasPlayed: boolean, selectedPiece: PieceData}} Play
    * @typedef {{first: Play, second: Play}} Turn
    * @type {Turn}
    */
@@ -117,8 +121,7 @@ export function initialiseGameState(centre) {
    *
    * @param {PieceData} p_Piece
    */
-  const isPieceSelected = (p_Piece) =>
-    p_Piece === currentTurnData.first.selectedPiece;
+  const isPieceSelected = (p_Piece) => p_Piece.hasBeenPlayed;
 
   function initialiseGame() {
     dataNumbers = [25 /*, 37 , 25, 256, 42, 56, 97, 60*/];
@@ -189,11 +192,33 @@ export function initialiseGameState(centre) {
   }
 
   /**
+   *
+   * @param {PieceData} p_Piece
+   * @param {Date} p_Now
+   */
+  function startMovingIn(p_Piece, p_Now) {
+    p_Piece.isMovingIn = true;
+    p_Piece.moveInStartTime = p_Now;
+    p_Piece.moveInEndTime = addSeconds(p_Now, SECONDS_PER_SELECT);
+  }
+
+  /**
+   *
+   * @param {PieceData} p_Piece
+   * @param {Date} p_Now
+   */
+  function startMovingOut(p_Piece, p_Now) {
+    p_Piece.isMovingOut = true;
+    p_Piece.moveOutStartTime = p_Now;
+    p_Piece.moveOutEndTime = addSeconds(p_Now, SECONDS_PER_SELECT);
+  }
+
+  /**
    * @param {PieceData} hitCircle
    */
   function onCircleClicked(hitCircle) {
     const now = new Date();
-    const newPlay = doPlay(hitCircle, now);
+    const newPlay = doPlay(hitCircle);
     if (
       currentTurnData.first.hasPlayed &&
       currentTurnData.first.selectedPiece !== hitCircle
@@ -202,7 +227,7 @@ export function initialiseGameState(centre) {
     } else {
       currentTurnData.first = newPlay;
     }
-    startMovingIn(hitCircle);
+    startMovingIn(hitCircle, now);
   }
 
   const SECONDS_PER_SPIN = 10;
@@ -213,17 +238,20 @@ export function initialiseGameState(centre) {
    * @returns {DOMPointReadOnly}
    */
   function getPieceCentre(p_Index, p_Now) {
-    let pieceRadius;
-    if (isPieceSelected(circles[p_Index])) {
-      const progressFactor = Math.min(
-        1,
-        (p_Now - currentTurnData.first.selectionTime) /
-          (SECONDS_PER_SELECT * 1000)
-      );
-      pieceRadius =
+    let positionRadius;
+    const thePiece = circles[p_Index];
+    if (thePiece.isMovingIn && p_Now < thePiece.moveInEndTime) {
+      const progressFactor =
+        (p_Now - thePiece.moveInStartTime) / (SECONDS_PER_SELECT * 1000);
+      positionRadius =
         circleRadius - (circleRadius - innerCircleRadius) * progressFactor;
+    } else if (thePiece.isMovingOut && p_Now < thePiece.moveOutEndTime) {
+      const progressFactor =
+        (p_Now - thePiece.moveOutStartTime) / (SECONDS_PER_SELECT * 1000);
+      positionRadius =
+        innerCircleRadius + (circleRadius - innerCircleRadius) * progressFactor;
     } else {
-      pieceRadius = circleRadius;
+      positionRadius = circleRadius;
     }
     const partCircle =
       fullCircle *
@@ -231,8 +259,8 @@ export function initialiseGameState(centre) {
       ((p_Index + 1) / circles.length +
         //  Extra bit based on the current time (spinning at the rate of SECONDS_PER_SPIN)
         p_Now / (SECONDS_PER_SPIN * 1_000));
-    const circleX = centre.x + pieceRadius * Math.sin(partCircle);
-    const circleY = centre.y + pieceRadius * Math.cos(partCircle);
+    const circleX = centre.x + positionRadius * Math.sin(partCircle);
+    const circleY = centre.y + positionRadius * Math.cos(partCircle);
     return new DOMPointReadOnly(circleX, circleY);
   }
 
@@ -297,6 +325,21 @@ export function initialiseGameState(centre) {
    * @param {Date} p_Now
    */
   function onGameTick(p_Now) {
+    if (turnIsOver(currentTurnData)) {
+      const isTurnWon = turnIsWon(currentTurnData);
+      endTurnForPiece(currentTurnData.first.selectedPiece, isTurnWon);
+      endTurnForPiece(currentTurnData.second.selectedPiece, isTurnWon);
+      //  Reset the turn
+      currentTurnData.first = initialPlay();
+      currentTurnData.second = initialPlay();
+    }
+    //  ??
+    if (!gameIsWon() && levelIsWon()) {
+      currentLevel++;
+      if (!gameIsWon()) {
+        initialiseNewLevel();
+      }
+    }
     circles.forEach((c) => {
       if (c.popStartTime !== null) {
         c.isDisplayed = p_Now < c.popEndTime;
@@ -310,20 +353,6 @@ export function initialiseGameState(centre) {
         }
       }
     });
-    if (turnIsOver(currentTurnData)) {
-      const isTurnWon = turnIsWon(currentTurnData);
-      endTurnForPiece(currentTurnData.first.selectedPiece, isTurnWon);
-      endTurnForPiece(currentTurnData.second.selectedPiece, isTurnWon);
-      //  Reset the turn
-      currentTurnData.first = initialPlay();
-      currentTurnData.second = initialPlay();
-    }
-    if (!gameIsWon() && levelIsWon()) {
-      currentLevel++;
-      if (!gameIsWon()) {
-        initialiseNewLevel();
-      }
-    }
   }
 
   /**
