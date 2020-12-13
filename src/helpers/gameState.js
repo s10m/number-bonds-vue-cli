@@ -12,8 +12,6 @@ export function initialiseGameState(centre) {
    * path:Path2D,
    * popStartTime: Date,
    * popEndTime: Date,
-   * hasBeenPlayed: boolean,
-   * hasPlayedCorrect: boolean
    * playMoveStartTime: Date,
    * playMoveEndTime: Date,
    * isMovingIn: boolean,
@@ -235,7 +233,7 @@ export function initialiseGameState(centre) {
   }
 
   const SECONDS_PER_SPIN = 10;
-  const SECONDS_PER_SELECT = 3;
+  const SECONDS_PER_SELECT = 1;
   /**
    * @param {number} p_Index
    * @param {Date} p_Now
@@ -314,20 +312,6 @@ export function initialiseGameState(centre) {
     return p_Piece.path;
   }
 
-  const PLAY_MOVE_TIME_SECONDS = 3;
-  /**
-   *
-   * @param {Date} p_Now
-   * @param {PieceData} p_Piece
-   * @param {boolean} p_IsCorrect
-   */
-  function endTurnForPiece(p_Now, p_Piece, p_IsCorrect) {
-    p_Piece.hasBeenPlayed = true;
-    p_Piece.hasPlayedCorrect = p_IsCorrect;
-    p_Piece.playMoveStartTime = p_Now;
-    p_Piece.playMoveEndTime = addSeconds(p_Now, PLAY_MOVE_TIME_SECONDS);
-  }
-
   /**
    *
    * @param {Date} p_Now
@@ -335,8 +319,13 @@ export function initialiseGameState(centre) {
   function onGameTick(p_Now) {
     if (turnIsOver(currentTurnData, p_Now)) {
       const isTurnWon = turnIsWon(currentTurnData);
-      endTurnForPiece(p_Now, currentTurnData.first.selectedPiece, isTurnWon);
-      endTurnForPiece(p_Now, currentTurnData.second.selectedPiece, isTurnWon);
+      if (isTurnWon) {
+        startPopping(currentTurnData.first.selectedPiece, p_Now);
+        startPopping(currentTurnData.second.selectedPiece, p_Now);
+      } else {
+        startMovingOut(currentTurnData.first.selectedPiece, p_Now);
+        startMovingOut(currentTurnData.second.selectedPiece, p_Now);
+      }
       //  Reset the turn
       currentTurnData.first = initialPlay();
       currentTurnData.second = initialPlay();
@@ -351,14 +340,6 @@ export function initialiseGameState(centre) {
     circles.forEach((c) => {
       if (c.popStartTime !== null) {
         c.isDisplayed = p_Now < c.popEndTime;
-      }
-      if (c.hasBeenPlayed && p_Now > c.playMoveEndTime) {
-        c.hasBeenPlayed = false;
-        if (c.hasPlayedCorrect) {
-          startPopping(c, p_Now);
-        } else {
-          startMovingOut(c, p_Now);
-        }
       }
     });
   }
