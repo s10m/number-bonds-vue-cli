@@ -125,7 +125,7 @@ export function initialiseGameState(centre, sounds) {
   const isPieceSelected = (p_Piece) => p_Piece.isMovingIn;
 
   function initialiseGame() {
-    dataNumbers = [25 /*, 37 , 25, 256, 42, 56, 97, 60*/];
+    dataNumbers = [25, 37 /* , 25, 256, 42, 56, 97, 60*/];
     currentLevel = 0;
     initialiseNewLevel();
   }
@@ -137,9 +137,8 @@ export function initialiseGameState(centre, sounds) {
     circles = [];
     while (currentPair < totalPairs) {
       const firstNumber = Math.round(Math.random() * targetNumber);
-      const secondNumber = targetNumber - firstNumber;
       circles.push(initACircle(firstNumber));
-      circles.push(initACircle(secondNumber));
+      circles.push(initACircle(targetNumber - firstNumber));
       currentPair++;
     }
     shuffleCircles();
@@ -175,10 +174,7 @@ export function initialiseGameState(centre, sounds) {
   function onGameClick(theContext, x, y) {
     const clickedCircle = getHitCircle(theContext, x, y);
     if (clickedCircle) {
-      console.log("hit");
       onCircleClicked(clickedCircle);
-    } else {
-      console.log("miss");
     }
   }
 
@@ -209,8 +205,7 @@ export function initialiseGameState(centre, sounds) {
    * @param {Date} p_Now
    */
   function startMovingOut(p_Piece, p_Now) {
-    p_Piece.isMovingIn = false;
-    p_Piece.isMovingOut = true;
+    p_Piece.isMovingIn = !(p_Piece.isMovingOut = true);
     p_Piece.moveOutStartTime = p_Now;
     p_Piece.moveOutEndTime = addSeconds(p_Now, SECONDS_PER_SELECT);
   }
@@ -219,7 +214,6 @@ export function initialiseGameState(centre, sounds) {
    * @param {PieceData} hitCircle
    */
   function onCircleClicked(hitCircle) {
-    const now = new Date();
     const newPlay = doPlay(hitCircle);
     if (
       currentTurnData.first.hasPlayed &&
@@ -229,7 +223,7 @@ export function initialiseGameState(centre, sounds) {
     } else {
       currentTurnData.first = newPlay;
     }
-    startMovingIn(hitCircle, now);
+    startMovingIn(hitCircle, new Date());
   }
 
   const SECONDS_PER_SELECT = 1;
@@ -312,8 +306,7 @@ export function initialiseGameState(centre, sounds) {
     const path = new Path2D();
     //  Save the path for collision detection
     path.arc(p_Centre.x, p_Centre.y, radius, 0, fullCircle);
-    p_Piece.path = path;
-    return p_Piece.path;
+    return (p_Piece.path = path);
   }
 
   /**
