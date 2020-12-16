@@ -1,8 +1,9 @@
 const fullCircle = 2 * Math.PI;
 /**
  * @param {DOMPointReadOnly} centre
+ * @param {{pop: HTMLAudioElement, clap: HTMLAudioElement}} sounds
  */
-export function initialiseGameState(centre) {
+export function initialiseGameState(centre, sounds) {
   //  TODO: sounds
   /**
    * @typedef {{calcNumber: number}} TargetData
@@ -326,6 +327,9 @@ export function initialiseGameState(centre) {
       if (isTurnWon) {
         startPopping(currentTurnData.first.selectedPiece, p_Now);
         startPopping(currentTurnData.second.selectedPiece, p_Now);
+        new Promise((resolve) =>
+          setTimeout(resolve, (SECONDS_PER_POP * 1000) / 3)
+        ).then(() => sounds.pop.play());
       } else {
         startMovingOut(currentTurnData.first.selectedPiece, p_Now);
         startMovingOut(currentTurnData.second.selectedPiece, p_Now);
@@ -337,7 +341,9 @@ export function initialiseGameState(centre) {
     //  ??
     if (!gameIsWon() && levelIsWon()) {
       currentLevel++;
-      if (!gameIsWon()) {
+      if (gameIsWon()) {
+        sounds.clap.play();
+      } else {
         initialiseNewLevel();
       }
     }

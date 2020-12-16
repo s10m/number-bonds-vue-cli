@@ -27,11 +27,22 @@ export default {
     /**@type {CanvasRenderingContext2D} */
     let theContext;
     const centre = new DOMPointReadOnly(250, 250);
-    const gameState = initialiseGameState(centre);
-    onMounted(() => {
+    const soundPop = new Audio(require("@/assets/sounds/pop.wav"));
+    const soundClap = new Audio(require("@/assets/sounds/clap.wav"));
+    const gameState = initialiseGameState(centre, {
+      pop: soundPop,
+      clap: soundClap,
+    });
+    onMounted(async () => {
       initialise();
     });
-    function initialise() {
+    async function initialise() {
+      const font = new FontFace(
+        "CanvasFont",
+        `url(${require("@/assets/fonts/Lobster/Lobster-Regular.ttf")})`
+      );
+      await font.load();
+      document.fonts.add(font);
       const theCanvas = document.getElementById("gameCanvas");
       theContext = theCanvas.getContext("2d");
       gameState.initialiseGame();
@@ -77,7 +88,7 @@ export default {
               `${p.data.calcNumber}`,
               pieceCentre,
               `rgba(0, 0, 255, ${circleAlpha})`,
-              "32px Impact"
+              "32px CanvasFont"
             );
           }
         });
@@ -89,7 +100,7 @@ export default {
             gameState.getCurrentTargetText(),
             centre,
             "black",
-            "48px Impact"
+            "48px CanvasFont"
           );
         }
       } catch (error) {
