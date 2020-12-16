@@ -4,6 +4,7 @@ const fullCircle = 2 * Math.PI;
  * @param {{pop: HTMLAudioElement, clap: HTMLAudioElement, error: HTMLAudioElement}} sounds
  */
 export function initialiseGameState(centre, sounds) {
+  //  TODO: more than one thing at once?
   /**
    * @typedef {{calcNumber: number}} TargetData
    * @typedef {{
@@ -63,6 +64,7 @@ export function initialiseGameState(centre, sounds) {
    * @param {Turn} p_Turn
    */
   const turnIsOver = (p_Turn, p_Now) =>
+    //  TODO: Allow multiple circles to finish at the same time
     p_Turn.first.hasPlayed &&
     p_Turn.second.hasPlayed &&
     p_Turn.first.selectedPiece.moveInEndTime < p_Now &&
