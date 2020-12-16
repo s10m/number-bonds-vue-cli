@@ -232,33 +232,37 @@ export function initialiseGameState(centre) {
     startMovingIn(hitCircle, now);
   }
 
-  const SECONDS_PER_SPIN = 10;
   const SECONDS_PER_SELECT = 1;
+  /**
+   *
+   * @param {PieceData} p_Piece
+   * @param {Date} p_Now
+   */
+  function getPieceRadiusProgressFactor(p_Piece, p_Now) {
+    if (p_Piece.isMovingIn) {
+      return p_Piece.moveInEndTime < p_Now
+        ? 0
+        : (p_Piece.moveInEndTime - p_Now) / (SECONDS_PER_SELECT * 1000);
+    } else if (p_Piece.isMovingOut) {
+      return p_Now > p_Piece.moveOutEndTime
+        ? 1
+        : (p_Now - p_Piece.moveOutStartTime) / (SECONDS_PER_SELECT * 1000);
+    } else {
+      return 1;
+    }
+  }
+
+  const SECONDS_PER_SPIN = 10;
   /**
    * @param {number} p_Index
    * @param {Date} p_Now
    * @returns {DOMPointReadOnly}
    */
   function getPieceCentre(p_Index, p_Now) {
-    let positionRadius;
     const thePiece = circles[p_Index];
-    if (thePiece.isMovingIn) {
-      const progressFactor =
-        p_Now > thePiece.moveInEndTime
-          ? 1
-          : (p_Now - thePiece.moveInStartTime) / (SECONDS_PER_SELECT * 1000);
-      positionRadius =
-        circleRadius - (circleRadius - innerCircleRadius) * progressFactor;
-    } else if (thePiece.isMovingOut && p_Now < thePiece.moveOutEndTime) {
-      const progressFactor =
-        p_Now > thePiece.moveOutEndTime
-          ? 1
-          : (p_Now - thePiece.moveOutStartTime) / (SECONDS_PER_SELECT * 1000);
-      positionRadius =
-        innerCircleRadius + (circleRadius - innerCircleRadius) * progressFactor;
-    } else {
-      positionRadius = circleRadius;
-    }
+    const progressFactor = getPieceRadiusProgressFactor(thePiece, p_Now);
+    const positionRadius =
+      innerCircleRadius + (circleRadius - innerCircleRadius) * progressFactor;
     const partCircle =
       fullCircle *
       //  Simple "How far along is based on it's index"
