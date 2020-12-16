@@ -29,9 +29,11 @@ export default {
     const centre = new DOMPointReadOnly(250, 250);
     const soundPop = new Audio(require("@/assets/sounds/pop.wav"));
     const soundClap = new Audio(require("@/assets/sounds/clap.wav"));
+    const soundError = new Audio(require("@/assets/sounds/error.wav"));
     const gameState = initialiseGameState(centre, {
       pop: soundPop,
       clap: soundClap,
+      error: soundError,
     });
     onMounted(async () => {
       initialise();

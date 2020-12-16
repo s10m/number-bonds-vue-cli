@@ -1,10 +1,9 @@
 const fullCircle = 2 * Math.PI;
 /**
  * @param {DOMPointReadOnly} centre
- * @param {{pop: HTMLAudioElement, clap: HTMLAudioElement}} sounds
+ * @param {{pop: HTMLAudioElement, clap: HTMLAudioElement, error: HTMLAudioElement}} sounds
  */
 export function initialiseGameState(centre, sounds) {
-  //  TODO: sounds
   /**
    * @typedef {{calcNumber: number}} TargetData
    * @typedef {{
@@ -333,6 +332,7 @@ export function initialiseGameState(centre, sounds) {
       } else {
         startMovingOut(currentTurnData.first.selectedPiece, p_Now);
         startMovingOut(currentTurnData.second.selectedPiece, p_Now);
+        sounds.error.play();
       }
       //  Reset the turn
       currentTurnData.first = initialPlay();
