@@ -4,7 +4,6 @@ const fullCircle = 2 * Math.PI;
  * @param {{pop: HTMLAudioElement, clap: HTMLAudioElement, error: HTMLAudioElement}} sounds
  */
 export function initialiseGameState(centre, sounds) {
-  //  TODO: more than one thing at once?
   /**
    * @typedef {{calcNumber: number}} TargetData
    * @typedef {{
@@ -48,27 +47,7 @@ export function initialiseGameState(centre, sounds) {
   /**
    * @returns {[PieceData]}
    */
-  const getCirclesToDraw = () => circles; //.filter((c) => c.isDisplayed);
-
-  /**
-   * @param {Turn} p_Turn
-   * @returns {boolean}
-   */
-  const turnIsWon = (p_Turn) =>
-    dataNumbers[currentLevel] ===
-    p_Turn.first.selectedPiece.data.calcNumber +
-      p_Turn.second.selectedPiece.data.calcNumber;
-
-  /**
-   *
-   * @param {Turn} p_Turn
-   */
-  const turnIsOver = (p_Turn, p_Now) =>
-    //  TODO: Allow multiple circles to finish at the same time
-    p_Turn.first.hasPlayed &&
-    p_Turn.second.hasPlayed &&
-    p_Turn.first.selectedPiece.moveInEndTime < p_Now &&
-    p_Turn.second.selectedPiece.moveInEndTime < p_Now;
+  const getCirclesToDraw = () => circles;
 
   /**
    * @returns {boolean}
@@ -97,31 +76,6 @@ export function initialiseGameState(centre, sounds) {
       .find((c) => theContext.isPointInPath(c.path, x, y));
 
   /**
-   * @returns {Play}
-   */
-  const initialPlay = () => ({ hasPlayed: false, selectedPiece: null });
-
-  /**
-   * @param {PieceData} p_Circle
-   * @returns {Play}
-   */
-  const doPlay = (p_Circle) => ({
-    hasPlayed: true,
-    selectedPiece: p_Circle,
-  });
-
-  /**
-   * @typedef {{hasPlayed: boolean, selectedPiece: PieceData}} Play
-   * @typedef {{first: Play, second: Play}} Turn
-   * @type {Turn}
-   */
-  const currentTurnData = {
-    first: initialPlay(),
-    second: initialPlay(),
-  };
-
-  /**
-   *
    * @param {PieceData} p_Piece
    */
   const isPieceSelected = (p_Piece) => p_Piece.isMovingIn;
@@ -132,12 +86,12 @@ export function initialiseGameState(centre, sounds) {
     initialiseNewLevel();
   }
 
+  const NUMBER_OF_PAIRS = 4;
   function initialiseNewLevel() {
     const targetNumber = dataNumbers[currentLevel];
-    const totalPairs = 4;
     let currentPair = 0;
     circles = [];
-    while (currentPair < totalPairs) {
+    while (currentPair < NUMBER_OF_PAIRS) {
       const firstNumber = Math.round(Math.random() * targetNumber);
       circles.push(initACircle(firstNumber));
       circles.push(initACircle(targetNumber - firstNumber));
@@ -157,7 +111,6 @@ export function initialiseGameState(centre, sounds) {
   }
 
   /**
-   *
    * @param {Date} p_Now
    * @param {number} p_SecondsToAdd
    * @returns {Date}
@@ -181,7 +134,6 @@ export function initialiseGameState(centre, sounds) {
   }
 
   /**
-   *
    * @param {PieceData} p_Piece
    * @param {Date} p_Now
    */
@@ -191,7 +143,6 @@ export function initialiseGameState(centre, sounds) {
   }
 
   /**
-   *
    * @param {PieceData} p_Piece
    * @param {Date} p_Now
    */
@@ -202,7 +153,6 @@ export function initialiseGameState(centre, sounds) {
   }
 
   /**
-   *
    * @param {PieceData} p_Piece
    * @param {Date} p_Now
    */
@@ -213,24 +163,43 @@ export function initialiseGameState(centre, sounds) {
   }
 
   /**
+   * @param {PieceData} p_Piece
+   */
+  function canPlay(p_Piece) {
+    //  Cannot be in any selection
+    return !selections.some((s) => s.some((p) => p === p_Piece));
+  }
+
+  let currentTurnIndex = 0;
+  /**
+   * @param {PieceData} p_Piece
+   */
+  function doPlay(p_Piece) {
+    selections[currentTurnIndex].push(p_Piece);
+    startMovingIn(p_Piece, new Date());
+  }
+
+  const SELECTIONS_PER_TURN = 2;
+  function prepareForNextPlay() {
+    if (selections[currentTurnIndex].length == SELECTIONS_PER_TURN) {
+      currentTurnIndex = (currentTurnIndex + 1) % NUMBER_OF_PAIRS;
+    }
+  }
+
+  /**@type {[[PieceData]]} */
+  const selections = [[], [], [], []];
+  /**
    * @param {PieceData} hitCircle
    */
   function onCircleClicked(hitCircle) {
-    const newPlay = doPlay(hitCircle);
-    if (
-      currentTurnData.first.hasPlayed &&
-      currentTurnData.first.selectedPiece !== hitCircle
-    ) {
-      currentTurnData.second = newPlay;
-    } else {
-      currentTurnData.first = newPlay;
+    if (canPlay(hitCircle)) {
+      doPlay(hitCircle);
+      prepareForNextPlay();
     }
-    startMovingIn(hitCircle, new Date());
   }
 
   const SECONDS_PER_SELECT = 1;
   /**
-   *
    * @param {PieceData} p_Piece
    * @param {Date} p_Now
    */
@@ -272,7 +241,6 @@ export function initialiseGameState(centre, sounds) {
 
   const SECONDS_PER_POP = 1;
   /**
-   *
    * @param {PieceData} p_Piece
    * @param {Date} p_Now
    */
@@ -312,28 +280,40 @@ export function initialiseGameState(centre, sounds) {
   }
 
   /**
-   *
+   * @param {Date} p_Now
+   */
+  function checkForTurnWon(p_Now) {
+    for (let pairNumber = 0; pairNumber < selections.length; pairNumber++) {
+      const aSelection = selections[pairNumber];
+      //  If the play is active
+      if (aSelection.length === SELECTIONS_PER_TURN) {
+        //  If they have all finished moving in (turn is over)
+        if (aSelection.every((p) => p.moveInEndTime < p_Now)) {
+          const selectedTotal = aSelection.reduce(
+            (v, c) => v + c.data.calcNumber,
+            0
+          );
+          if (selectedTotal === dataNumbers[currentLevel]) {
+            aSelection.forEach((p) => startPopping(p, p_Now));
+            new Promise((resolve) =>
+              setTimeout(resolve, (SECONDS_PER_POP * 1000) / 3)
+            ).then(() => sounds.pop.play());
+          } else {
+            aSelection.forEach((p) => startMovingOut(p, p_Now));
+            sounds.error.play();
+          }
+          aSelection.length = 0;
+        }
+      }
+    }
+  }
+
+  /**
    * @param {Date} p_Now
    */
   function onGameTick(p_Now) {
-    if (turnIsOver(currentTurnData, p_Now)) {
-      const isTurnWon = turnIsWon(currentTurnData);
-      if (isTurnWon) {
-        startPopping(currentTurnData.first.selectedPiece, p_Now);
-        startPopping(currentTurnData.second.selectedPiece, p_Now);
-        new Promise((resolve) =>
-          setTimeout(resolve, (SECONDS_PER_POP * 1000) / 3)
-        ).then(() => sounds.pop.play());
-      } else {
-        startMovingOut(currentTurnData.first.selectedPiece, p_Now);
-        startMovingOut(currentTurnData.second.selectedPiece, p_Now);
-        sounds.error.play();
-      }
-      //  Reset the turn
-      currentTurnData.first = initialPlay();
-      currentTurnData.second = initialPlay();
-    }
-    //  ??
+    checkForTurnWon(p_Now);
+
     if (!gameIsWon() && levelIsWon()) {
       currentLevel++;
       if (gameIsWon()) {
@@ -350,7 +330,6 @@ export function initialiseGameState(centre, sounds) {
   }
 
   /**
-   *
    * @param {PieceData} p_Piece
    * @param {Date} p_Now
    */
