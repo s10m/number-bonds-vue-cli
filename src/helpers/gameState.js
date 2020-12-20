@@ -4,6 +4,7 @@ const fullCircle = 2 * Math.PI;
  * @param {{pop: HTMLAudioElement, clap: HTMLAudioElement, error: HTMLAudioElement}} sounds
  */
 export function initialiseGameState(centre, sounds) {
+  //  TODO: Split into drawing and game engine functions
   /**
    * @typedef {{calcNumber: number}} TargetData
    * @typedef {{
@@ -280,30 +281,36 @@ export function initialiseGameState(centre, sounds) {
   }
 
   /**
+   * @param {[PieceData]} p_Selection
    * @param {Date} p_Now
    */
-  function checkForTurnWon(p_Now) {
-    for (let pairNumber = 0; pairNumber < selections.length; pairNumber++) {
-      const aSelection = selections[pairNumber];
-      //  If the play is active
-      if (aSelection.length === SELECTIONS_PER_TURN) {
-        //  If they have all finished moving in (turn is over)
-        if (aSelection.every((p) => p.moveInEndTime < p_Now)) {
-          const selectedTotal = aSelection.reduce(
-            (v, c) => v + c.data.calcNumber,
-            0
-          );
-          if (selectedTotal === dataNumbers[currentLevel]) {
-            aSelection.forEach((p) => startPopping(p, p_Now));
-            new Promise((resolve) =>
-              setTimeout(resolve, (SECONDS_PER_POP * 1000) / 3)
-            ).then(() => sounds.pop.play());
-          } else {
-            aSelection.forEach((p) => startMovingOut(p, p_Now));
-            sounds.error.play();
-          }
-          aSelection.length = 0;
-        }
+  function onTurnFinished(p_Selection, p_Now) {
+    const selectedTotal = p_Selection.reduce(
+      (v, c) => v + c.data.calcNumber,
+      0
+    );
+    if (selectedTotal === dataNumbers[currentLevel]) {
+      p_Selection.forEach((p) => startPopping(p, p_Now));
+      new Promise((resolve) =>
+        setTimeout(resolve, (SECONDS_PER_POP * 1000) / 3)
+      ).then(() => sounds.pop.play());
+    } else {
+      p_Selection.forEach((p) => startMovingOut(p, p_Now));
+      sounds.error.play();
+    }
+    p_Selection.length = 0;
+  }
+
+  /**
+   * @param {[PieceData]} p_Selection
+   * @param {Date} p_Now
+   */
+  function checkForTurnWon(p_Selection, p_Now) {
+    //  If the play is active
+    if (p_Selection.length === SELECTIONS_PER_TURN) {
+      //  If they have all finished moving in (turn is over)
+      if (p_Selection.every((p) => p.moveInEndTime < p_Now)) {
+        onTurnFinished(p_Selection, p_Now);
       }
     }
   }
@@ -311,9 +318,15 @@ export function initialiseGameState(centre, sounds) {
   /**
    * @param {Date} p_Now
    */
-  function onGameTick(p_Now) {
-    checkForTurnWon(p_Now);
+  function checkAllForTurnWon(p_Now) {
+    selections.forEach((s) => checkForTurnWon(s, p_Now));
+  }
 
+  /**
+   * @param {Date} p_Now
+   */
+  function onGameTick(p_Now) {
+    checkAllForTurnWon(p_Now);
     if (!gameIsWon() && levelIsWon()) {
       currentLevel++;
       if (gameIsWon()) {
