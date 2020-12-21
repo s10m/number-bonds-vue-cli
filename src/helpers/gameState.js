@@ -53,7 +53,16 @@ export function initialiseGameState(centre, sounds) {
   /**
    * @returns {boolean}
    */
-  const gameIsWon = () => currentLevel === dataNumbers.length;
+  function gameIsWon() {
+    return gameHasEnded && gameWasWon;
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  function gameIsLost() {
+    return gameHasEnded && !gameWasWon;
+  }
 
   /**
    * @returns {boolean}
@@ -81,14 +90,19 @@ export function initialiseGameState(centre, sounds) {
    */
   const isPieceSelected = (p_Piece) => p_Piece.isMovingIn;
 
+  const SECONDS_PER_LEVEL = 20;
   function initialiseGame() {
     dataNumbers = [25, 37 /* , 25, 256, 42, 56, 97, 60*/];
     currentLevel = 0;
-    initialiseNewLevel();
+    gameHasEnded = false;
+    initialiseNewLevel(true);
   }
 
   const NUMBER_OF_PAIRS = 4;
-  function initialiseNewLevel() {
+  /**
+   * @param {boolean} p_IsFirstLevel
+   */
+  function initialiseNewLevel(p_IsFirstLevel) {
     const targetNumber = dataNumbers[currentLevel];
     let currentPair = 0;
     circles = [];
@@ -99,6 +113,10 @@ export function initialiseGameState(centre, sounds) {
       currentPair++;
     }
     shuffleCircles();
+    gameEndTime = addSeconds(
+      p_IsFirstLevel ? new Date() : gameEndTime,
+      SECONDS_PER_LEVEL
+    );
   }
 
   function shuffleCircles() {
@@ -280,6 +298,7 @@ export function initialiseGameState(centre, sounds) {
     return (p_Piece.path = path);
   }
 
+  const SECONDS_PER_ERROR_PENALTY = 2;
   /**
    * @param {[PieceData]} p_Selection
    * @param {Date} p_Now
@@ -297,6 +316,8 @@ export function initialiseGameState(centre, sounds) {
     } else {
       p_Selection.forEach((p) => startMovingOut(p, p_Now));
       sounds.error.play();
+      //  Time off.
+      gameEndTime = addSeconds(gameEndTime, -SECONDS_PER_ERROR_PENALTY);
     }
     p_Selection.length = 0;
   }
@@ -322,24 +343,43 @@ export function initialiseGameState(centre, sounds) {
     selections.forEach((s) => checkForTurnWon(s, p_Now));
   }
 
+  function endGame(p_HasWon) {
+    if (p_HasWon) {
+      sounds.clap.play();
+    } else {
+      //  TODO: booing
+    }
+    gameHasEnded = true;
+    gameWasWon = p_HasWon;
+  }
+
+  /** @type {boolean} */
+  let gameHasEnded;
+  /** @type {boolean} */
+  let gameWasWon;
   /**
    * @param {Date} p_Now
    */
   function onGameTick(p_Now) {
-    checkAllForTurnWon(p_Now);
-    if (!gameIsWon() && levelIsWon()) {
-      currentLevel++;
-      if (gameIsWon()) {
-        sounds.clap.play();
-      } else {
-        initialiseNewLevel();
+    if (!gameHasEnded) {
+      checkAllForTurnWon(p_Now);
+      if (!gameIsWon() && levelIsWon()) {
+        currentLevel++;
+        if (gameIsWon()) {
+          sounds.clap.play();
+          endGame(true);
+        } else {
+          initialiseNewLevel(false);
+        }
+      } else if (gameIsOver(p_Now)) {
+        endGame(false);
       }
+      circles.forEach((c) => {
+        if (c.popStartTime !== null) {
+          c.isDisplayed = p_Now < c.popEndTime;
+        }
+      });
     }
-    circles.forEach((c) => {
-      if (c.popStartTime !== null) {
-        c.isDisplayed = p_Now < c.popEndTime;
-      }
-    });
   }
 
   /**
@@ -356,11 +396,28 @@ export function initialiseGameState(centre, sounds) {
     }
   }
 
+  /**@type {Date} gameEndTime */
+  let gameEndTime;
+  /**
+   * @param {Date} p_Now
+   */
+  function getCountdownSeconds(p_Now) {
+    return Math.round((gameEndTime - p_Now) / 1000);
+  }
+
+  /**
+   * @param {Date} p_Now
+   */
+  function gameIsOver(p_Now) {
+    return p_Now > gameEndTime;
+  }
+
   return {
     initialiseGame,
     initialiseNewLevel,
     getCirclesToDraw,
     gameIsWon,
+    gameIsLost,
     onGameClick,
     getCurrentTargetText,
     isPieceSelected,
@@ -368,5 +425,6 @@ export function initialiseGameState(centre, sounds) {
     updatePiecePath,
     onGameTick,
     getPieceAlpha,
+    getCountdownSeconds,
   };
 }

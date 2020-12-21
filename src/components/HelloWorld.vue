@@ -75,34 +75,45 @@ export default {
         const timeNow = new Date();
         theContext.clearRect(0, 0, 500, 500); // clear canvas
         gameState.onGameTick(timeNow);
-        gameState.getCirclesToDraw().forEach((p, index) => {
-          if (p.isDisplayed) {
-            //  Circles
-            const circleAlpha = gameState.getPieceAlpha(p, timeNow);
-            theContext.fillStyle = gameState.isPieceSelected(p)
-              ? `rgba(0, 255, 0, ${circleAlpha})`
-              : `rgba(255, 0, 0, ${circleAlpha})`;
-            const pieceCentre = gameState.getPieceCentre(index, timeNow);
-            theContext.fill(gameState.updatePiecePath(p, pieceCentre, timeNow));
-            //  Numbers
-            drawText(
-              theContext,
-              `${p.data.calcNumber}`,
-              pieceCentre,
-              `rgba(0, 0, 255, ${circleAlpha})`,
-              "32px CanvasFont"
-            );
-          }
-        });
         if (gameState.gameIsWon()) {
           drawText(theContext, "✓", centre, "green", "72px Impact");
+        } else if (gameState.gameIsLost()) {
+          drawText(theContext, "✗", centre, "red", "72px Impact");
         } else {
+          gameState.getCirclesToDraw().forEach((p, index) => {
+            if (p.isDisplayed) {
+              //  Circles
+              const circleAlpha = gameState.getPieceAlpha(p, timeNow);
+              theContext.fillStyle = gameState.isPieceSelected(p)
+                ? `rgba(0, 255, 0, ${circleAlpha})`
+                : `rgba(255, 0, 0, ${circleAlpha})`;
+              const pieceCentre = gameState.getPieceCentre(index, timeNow);
+              theContext.fill(
+                gameState.updatePiecePath(p, pieceCentre, timeNow)
+              );
+              //  Numbers
+              drawText(
+                theContext,
+                `${p.data.calcNumber}`,
+                pieceCentre,
+                `rgba(0, 0, 255, ${circleAlpha})`,
+                "32px CanvasFont"
+              );
+            }
+          });
           drawText(
             theContext,
             gameState.getCurrentTargetText(),
             centre,
             "black",
             "48px CanvasFont"
+          );
+          drawText(
+            theContext,
+            `${gameState.getCountdownSeconds(timeNow)}`,
+            new DOMPointReadOnly(30, 30),
+            "black",
+            "32px CanvasFont"
           );
         }
       } catch (error) {
