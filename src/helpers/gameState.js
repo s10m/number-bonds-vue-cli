@@ -5,6 +5,9 @@ const fullCircle = 2 * Math.PI;
  */
 export function initialiseGameState(centre, sounds) {
   //  TODO: Split into drawing and game engine functions
+  //  TODO: Booing
+  //  TODO: "+5", "-2" text
+  //  TODO: Allow win if circles are moving in (delay setting end game until things have finished)
   /**
    * @typedef {{calcNumber: number}} TargetData
    * @typedef {{
