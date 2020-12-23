@@ -1,7 +1,7 @@
 const fullCircle = 2 * Math.PI;
 /**
  * @param {DOMPointReadOnly} centre
- * @param {{pop: HTMLAudioElement, clap: HTMLAudioElement, error: HTMLAudioElement}} sounds
+ * @param {{pop: HTMLAudioElement, clap: HTMLAudioElement, error: HTMLAudioElement, boo: HTMLAudioElement}} sounds
  */
 export function initialiseGameState(centre, sounds) {
   //  TODO: Split into drawing and game engine functions
@@ -70,6 +70,13 @@ export function initialiseGameState(centre, sounds) {
   /**
    * @returns {boolean}
    */
+  function hasFinishedLastLevel() {
+    return currentLevel === dataNumbers.length;
+  }
+
+  /**
+   * @returns {boolean}
+   */
   const levelIsWon = () => circles.filter((c) => c.isDisplayed).length === 0;
 
   /**
@@ -93,9 +100,9 @@ export function initialiseGameState(centre, sounds) {
    */
   const isPieceSelected = (p_Piece) => p_Piece.isMovingIn;
 
-  const SECONDS_PER_LEVEL = 20;
+  const SECONDS_PER_LEVEL = 10;
   function initialiseGame() {
-    dataNumbers = [25, 37 /* , 25, 256, 42, 56, 97, 60*/];
+    dataNumbers = [5, 3 /* , 25, 256, 42, 56, 97, 60*/];
     currentLevel = 0;
     gameHasEnded = false;
     initialiseNewLevel(true);
@@ -316,6 +323,7 @@ export function initialiseGameState(centre, sounds) {
       new Promise((resolve) =>
         setTimeout(resolve, (SECONDS_PER_POP * 1000) / 3)
       ).then(() => sounds.pop.play());
+      gameEndTime = addSeconds(gameEndTime, SECONDS_PER_ERROR_PENALTY);
     } else {
       p_Selection.forEach((p) => startMovingOut(p, p_Now));
       sounds.error.play();
@@ -350,7 +358,7 @@ export function initialiseGameState(centre, sounds) {
     if (p_HasWon) {
       sounds.clap.play();
     } else {
-      //  TODO: booing
+      sounds.boo.play();
     }
     gameHasEnded = true;
     gameWasWon = p_HasWon;
@@ -366,9 +374,9 @@ export function initialiseGameState(centre, sounds) {
   function onGameTick(p_Now) {
     if (!gameHasEnded) {
       checkAllForTurnWon(p_Now);
-      if (!gameIsWon() && levelIsWon()) {
+      if (levelIsWon()) {
         currentLevel++;
-        if (gameIsWon()) {
+        if (hasFinishedLastLevel()) {
           sounds.clap.play();
           endGame(true);
         } else {

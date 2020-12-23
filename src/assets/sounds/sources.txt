@@ -1,3 +1,4 @@
 pop.wav	https://freesound.org/people/deraj/sounds/202230/
 clap.wav	https://freesound.org/people/Alterr/sounds/209792/
 error.wav	https://freesound.org/people/KevinVG207/sounds/331912/
+boo.wav	https://freesound.org/people/tim.kahn/sounds/336997/

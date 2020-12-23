@@ -30,10 +30,12 @@ export default {
     const soundPop = new Audio(require("@/assets/sounds/pop.wav"));
     const soundClap = new Audio(require("@/assets/sounds/clap.wav"));
     const soundError = new Audio(require("@/assets/sounds/error.wav"));
+    const soundBoo = new Audio(require("@/assets/sounds/boo.wav"));
     const gameState = initialiseGameState(centre, {
       pop: soundPop,
       clap: soundClap,
       error: soundError,
+      boo: soundBoo,
     });
     onMounted(async () => {
       initialise();
