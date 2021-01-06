@@ -100,9 +100,41 @@ export function initialiseGameState(centre, sounds) {
    */
   const isPieceSelected = (p_Piece) => p_Piece.isMovingIn;
 
-  const SECONDS_PER_LEVEL = 10;
-  function initialiseGame() {
-    dataNumbers = [5, 3 /* , 25, 256, 42, 56, 97, 60*/];
+  const MAX_TARGET_EASY = 9;
+  const MAX_TARGET_MEDIUM = 20;
+  const MAX_TARGET_HARD = 1000;
+  /**
+   * @returns {number}
+   */
+  function difficultyMax() {
+    return forDifficulty(MAX_TARGET_EASY, MAX_TARGET_MEDIUM, MAX_TARGET_HARD);
+  }
+
+  function forDifficulty(easy, medium, hard) {
+    switch (currentDifficulty) {
+      case "easy":
+        return easy;
+      case "medium":
+        return medium;
+      default:
+        return hard;
+    }
+  }
+
+  const LEVELS_PER_GAME = 5;
+  /** @type {string} */
+  let currentDifficulty;
+  /**
+   * @param {string} difficulty
+   */
+  function initialiseGame(difficulty) {
+    currentDifficulty = difficulty.toLowerCase();
+    dataNumbers = [];
+    const maxForDifficulty = difficultyMax(difficulty);
+    for (let level = 0; level < LEVELS_PER_GAME; level++) {
+      const levelTarget = Math.round(Math.random() * maxForDifficulty);
+      dataNumbers.push(levelTarget);
+    }
     currentLevel = 0;
     gameHasEnded = false;
     initialiseNewLevel(true);
@@ -125,7 +157,21 @@ export function initialiseGameState(centre, sounds) {
     shuffleCircles();
     gameEndTime = addSeconds(
       p_IsFirstLevel ? new Date() : gameEndTime,
-      SECONDS_PER_LEVEL
+      difficultySecondsPerLevel()
+    );
+  }
+
+  const SECONDS_PER_LEVEL_EASY = 20;
+  const SECONDS_PER_LEVEL_MEDIUM = 15;
+  const SECONDS_PER_LEVEL_HARD = 10;
+  /**
+   * @returns {number}
+   */
+  function difficultySecondsPerLevel() {
+    return forDifficulty(
+      SECONDS_PER_LEVEL_EASY,
+      SECONDS_PER_LEVEL_MEDIUM,
+      SECONDS_PER_LEVEL_HARD
     );
   }
 
@@ -308,7 +354,34 @@ export function initialiseGameState(centre, sounds) {
     return (p_Piece.path = path);
   }
 
-  const SECONDS_PER_ERROR_PENALTY = 2;
+  const SECONDS_PER_SUCCESS_EASY = 5;
+  const SECONDS_PER_SUCCESS_MEDIUM = 3;
+  const SECONDS_PER_SUCCESS_HARD = 2;
+  /**
+   * @returns {number}
+   */
+  function difficultySecondsPerSuccess() {
+    return forDifficulty(
+      SECONDS_PER_SUCCESS_EASY,
+      SECONDS_PER_SUCCESS_MEDIUM,
+      SECONDS_PER_SUCCESS_HARD
+    );
+  }
+
+  const SECONDS_PER_ERROR_EASY = 2;
+  const SECONDS_PER_ERROR_MEDIUM = 2;
+  const SECONDS_PER_ERROR_HARD = 2;
+  /**
+   * @returns {number}
+   */
+  function difficultySecondsPerError() {
+    return forDifficulty(
+      SECONDS_PER_ERROR_EASY,
+      SECONDS_PER_ERROR_MEDIUM,
+      SECONDS_PER_ERROR_HARD
+    );
+  }
+
   /**
    * @param {[PieceData]} p_Selection
    * @param {Date} p_Now
@@ -323,12 +396,12 @@ export function initialiseGameState(centre, sounds) {
       new Promise((resolve) =>
         setTimeout(resolve, (SECONDS_PER_POP * 1000) / 3)
       ).then(() => sounds.pop.play());
-      gameEndTime = addSeconds(gameEndTime, SECONDS_PER_ERROR_PENALTY);
+      gameEndTime = addSeconds(gameEndTime, difficultySecondsPerSuccess());
     } else {
       p_Selection.forEach((p) => startMovingOut(p, p_Now));
       sounds.error.play();
       //  Time off.
-      gameEndTime = addSeconds(gameEndTime, -SECONDS_PER_ERROR_PENALTY);
+      gameEndTime = addSeconds(gameEndTime, -difficultySecondsPerError());
     }
     p_Selection.length = 0;
   }

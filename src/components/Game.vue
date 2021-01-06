@@ -5,6 +5,12 @@
     width="500"
     @click="gameCanvasClick"
   ></canvas>
+  <div v-if="displayState.controls">
+    <h2>Start game?</h2>
+    <div><button @click="startEasyGame">Easy</button></div>
+    <div><button @click="startMediumGame">Medium</button></div>
+    <div><button @click="startHardGame">Hard</button></div>
+  </div>
 </template>
 
 <script>
@@ -49,7 +55,14 @@ export default {
       document.fonts.add(font);
       const theCanvas = document.getElementById("gameCanvas");
       theContext = theCanvas.getContext("2d");
-      gameState.initialiseGame();
+    }
+
+    /**
+     * @param {string} difficulty
+     */
+    function startGame(difficulty) {
+      displayState.controls = false;
+      gameState.initialiseGame(difficulty);
       window.requestAnimationFrame(drawCircles);
     }
     /**
@@ -72,6 +85,7 @@ export default {
             2
       );
     }
+    const displayState = { controls: true };
     function drawCircles() {
       try {
         const timeNow = new Date();
@@ -79,8 +93,10 @@ export default {
         gameState.onGameTick(timeNow);
         if (gameState.gameIsWon()) {
           drawText(theContext, "✓", centre, "green", "72px Impact");
+          displayState.controls = true;
         } else if (gameState.gameIsLost()) {
           drawText(theContext, "✗", centre, "red", "72px Impact");
+          displayState.controls = true;
         } else {
           gameState.getCirclesToDraw().forEach((p, index) => {
             if (p.isDisplayed) {
@@ -117,18 +133,27 @@ export default {
             "black",
             "32px CanvasFont"
           );
+          window.requestAnimationFrame(drawCircles);
         }
       } catch (error) {
         console.error(error);
       }
-      window.requestAnimationFrame(drawCircles);
     }
 
     /**@param {MouseEvent} e */
     function gameCanvasClick(e) {
       gameState.onGameClick(theContext, e.offsetX, e.offsetY);
     }
-    return { gameCanvasClick };
+    const startEasyGame = () => startGame("easy");
+    const startMediumGame = () => startGame("medium");
+    const startHardGame = () => startGame("hard");
+    return {
+      gameCanvasClick,
+      displayState,
+      startEasyGame,
+      startMediumGame,
+      startHardGame,
+    };
   },
 };
 </script>
