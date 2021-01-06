@@ -22,7 +22,7 @@ import { initialiseGameState } from "../helpers/gameState";
  * cow kick bucket to help farmer milk cow
  */
 export default {
-  name: "HelloWorld",
+  name: "Game",
   setup() {
     /**@type {CanvasRenderingContext2D} */
     let theContext;
