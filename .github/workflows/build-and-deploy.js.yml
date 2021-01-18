@@ -23,4 +23,4 @@ jobs:
     - run: cd dist && git init
     - run: cd dist && git add -A
     - run: cd dist && git commit -m 'deployment'
-    - run: cd dist && git push -f https://${{ secrets.GITHUB_TOKEN }}:x-oauth-basic@github.com/s10m/number-bonds-vue-cli.git master:gh-pages
+    - run: cd dist && git push -f https://${{ secrets.PUBLIC_REPO }}@github.com/s10m/number-bonds-vue-cli.git master:gh-pages
