@@ -2,9 +2,7 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches: [ ci-build-action ]
 
 jobs:
   build:
@@ -26,4 +24,7 @@ jobs:
     - run: npm run build
     # - run: npm test
     
-    - run: git init dist
+    - run: cd dist && git init
+    - run: cd dist && git add -A
+    - run: cd dist && git commit -m 'deployment'
+    - run: cd dist && git push -f git@github.com:s10m/number-bonds-vue-cli.git master:gh-pages
