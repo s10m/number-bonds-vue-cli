@@ -2,7 +2,7 @@ name: Number bonds game CI
 
 on:
   push:
-    branches: [ ci-build-action ]
+    branches: [ master ]
 
 jobs:
   build:
