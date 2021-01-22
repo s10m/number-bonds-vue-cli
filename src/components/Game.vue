@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import { onMounted } from "vue";
+import { onMounted, reactive } from "vue";
 import { initialiseGameState } from "../helpers/gameState";
 /**
  * Numbers set up by teacher
@@ -85,7 +85,7 @@ export default {
             2
       );
     }
-    const displayState = { controls: true };
+    const displayState = reactive({ controls: true });
     function drawCircles() {
       try {
         const timeNow = new Date();
